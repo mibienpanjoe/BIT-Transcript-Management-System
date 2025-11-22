@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "TMS backend logic",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mibienpanjoe/BIT-Transcript-Management-System.git"
+  },
+  "author": "mibienpanjoe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mibienpanjoe/BIT-Transcript-Management-System/issues"
+  },
+  "homepage": "https://github.com/mibienpanjoe/BIT-Transcript-Management-System#readme"
+}
