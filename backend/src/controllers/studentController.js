@@ -6,24 +6,40 @@ const excelService = require('../services/excelService');
 // @access  Private/Admin
 exports.getStudents = async (req, res) => {
     try {
-        const { field, promotion, year, search } = req.query;
+        const { field, promotion, year, search, fieldId, promotionId, academicYear } = req.query;
         let query = { isActive: true };
 
-        if (field) query.fieldId = field;
-        if (promotion) query.promotionId = promotion;
-        if (year) query.academicYear = year;
+        if (field || fieldId) query.fieldId = field || fieldId;
+        if (promotion || promotionId) query.promotionId = promotion || promotionId;
+        if (year || academicYear) query.academicYear = year || academicYear;
 
         if (search) {
-            query.$or = [
-                { firstName: { $regex: search, $options: 'i' } },
-                { lastName: { $regex: search, $options: 'i' } },
-                { studentId: { $regex: search, $options: 'i' } },
-            ];
+            const trimmedSearch = search.trim();
+
+            // Check if search looks like a student ID (alphanumeric, no spaces)
+            const isLikelyStudentId = /^[a-zA-Z0-9]+$/.test(trimmedSearch);
+
+            if (isLikelyStudentId) {
+                // Prioritize exact or prefix match on studentId
+                query.$or = [
+                    { studentId: { $regex: `^${trimmedSearch}`, $options: 'i' } }, // Starts with
+                    { firstName: { $regex: trimmedSearch, $options: 'i' } },
+                    { lastName: { $regex: trimmedSearch, $options: 'i' } },
+                ];
+            } else {
+                // For searches with spaces or special chars, focus on names
+                query.$or = [
+                    { firstName: { $regex: trimmedSearch, $options: 'i' } },
+                    { lastName: { $regex: trimmedSearch, $options: 'i' } },
+                    { studentId: { $regex: trimmedSearch, $options: 'i' } },
+                ];
+            }
         }
 
         const students = await Student.find(query)
             .populate('fieldId', 'name code')
-            .populate('promotionId', 'name level');
+            .populate('promotionId', 'name level')
+            .sort({ studentId: 1 }); // Sort by studentId for consistent ordering
 
         res.status(200).json({
             success: true,

@@ -16,6 +16,7 @@ const tueRoutes = require('./routes/tueRoutes');
 const gradeRoutes = require('./routes/gradeRoutes');
 const calculationRoutes = require('./routes/calculationRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
+const transcriptRoutes = require('./routes/transcriptRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/tues', tueRoutes);
 app.use('/api/grades', gradeRoutes);
 app.use('/api/calculations', calculationRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/transcripts', transcriptRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
