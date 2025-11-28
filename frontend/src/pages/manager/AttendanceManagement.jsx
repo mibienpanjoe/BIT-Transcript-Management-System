@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { getFields, getPromotions, getSemesters } from '../../services/academicService';
-import { getTUEsForAttendance, submitAttendance, getAttendanceForTUE } from '../../services/attendanceService';
+import {
+    getTUEsForAttendance,
+    submitAttendance,
+    getAttendanceForTUE,
+    downloadAttendanceTemplate,
+    importAttendance
+} from '../../services/attendanceService';
 import AttendanceTable from '../../components/attendance/AttendanceTable';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Alert from '../../components/common/Alert';
 import { toast } from 'react-toastify';
-import { FaSave, FaArrowLeft } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaFileDownload, FaFileUpload } from 'react-icons/fa';
 
 const AttendanceManagement = () => {
     const [fields, setFields] = useState([]);
@@ -24,6 +30,7 @@ const AttendanceManagement = () => {
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [importing, setImporting] = useState(false);
 
     useEffect(() => {
         const loadFields = async () => {
@@ -89,20 +96,31 @@ const AttendanceManagement = () => {
         try {
             setLoading(true);
             const res = await getAttendanceForTUE(tue._id);
-            setStudents(res.data.students);
+            // res.data.students is array of { student, grade: { ...gradeData, isEditable } }
 
-            // Initialize attendance data
+            // Map to format expected by AttendanceTable or just use as is
+            // Let's assume AttendanceTable expects students array and we manage state separately
+            // But actually, the previous code was mapping differently. Let's align with what getGradesForTUE returns.
+
+            // The previous code was:
+            // res.data.students.forEach(s => { initialAttendance[s._id] = ... })
+            // But getGradesForTUE returns { student, grade } objects.
+
+            // Let's adapt:
+            const studentsList = res.data.students.map(item => item.student);
+            setStudents(studentsList);
+
             const initialAttendance = {};
-            res.data.students.forEach(s => {
-                initialAttendance[s._id] = {
-                    totalSessions: s.attendance?.totalSessions || 0,
-                    attendedSessions: s.attendance?.attendedSessions || 0,
-                    percentage: s.attendance?.percentage || 0
+            res.data.students.forEach(item => {
+                initialAttendance[item.student._id] = {
+                    presence: item.grade?.presence || 0,
+                    isEditable: item.grade?.isEditable ?? true // Default to true if not specified
                 };
             });
             setAttendanceData(initialAttendance);
             setSelectedTUE(tue);
         } catch (error) {
+            console.error(error);
             toast.error('Failed to load attendance data');
         } finally {
             setLoading(false);
@@ -110,6 +128,12 @@ const AttendanceManagement = () => {
     };
 
     const handleAttendanceChange = (studentId, field, value) => {
+        // Check if editable
+        if (attendanceData[studentId] && !attendanceData[studentId].isEditable) {
+            toast.warning('This grade is locked and cannot be edited.');
+            return;
+        }
+
         setAttendanceData(prev => ({
             ...prev,
             [studentId]: {
@@ -122,18 +146,64 @@ const AttendanceManagement = () => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            const updates = Object.keys(attendanceData).map(studentId => ({
-                studentId,
-                tueId: selectedTUE._id,
-                ...attendanceData[studentId]
-            }));
+            // Only send updates for editable records
+            const updates = Object.keys(attendanceData)
+                .filter(studentId => attendanceData[studentId].isEditable)
+                .map(studentId => ({
+                    studentId,
+                    tueId: selectedTUE._id,
+                    presence: attendanceData[studentId].presence
+                }));
+
+            if (updates.length === 0) {
+                toast.info('No editable changes to save');
+                return;
+            }
 
             await Promise.all(updates.map(update => submitAttendance(update)));
             toast.success('Attendance saved successfully');
+
+            // Refresh data to update lock status if needed
+            handleTUESelect(selectedTUE);
+
         } catch (error) {
             toast.error('Failed to save attendance');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const blob = await downloadAttendanceTemplate(selectedTUE._id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Attendance_Template_${selectedTUE.code}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            toast.error('Failed to download template');
+        }
+    };
+
+    const handleImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setImporting(true);
+            const res = await importAttendance(selectedTUE._id, file);
+            toast.success(res.message);
+            // Refresh data
+            handleTUESelect(selectedTUE);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Import failed');
+        } finally {
+            setImporting(false);
+            e.target.value = null; // Reset input
         }
     };
 
@@ -153,13 +223,38 @@ const AttendanceManagement = () => {
                             <p className="text-gray-500">{selectedTUE.code}</p>
                         </div>
                     </div>
-                    <Button
-                        onClick={handleSave}
-                        isLoading={saving}
-                        className="flex items-center"
-                    >
-                        <FaSave className="mr-2" /> Save Changes
-                    </Button>
+                    <div className="flex space-x-2">
+                        <Button
+                            onClick={handleDownloadTemplate}
+                            variant="secondary"
+                            className="flex items-center"
+                        >
+                            <FaFileDownload className="mr-2" /> Template
+                        </Button>
+                        <div className="relative">
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={handleImport}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                disabled={importing}
+                            />
+                            <Button
+                                variant="secondary"
+                                isLoading={importing}
+                                className="flex items-center"
+                            >
+                                <FaFileUpload className="mr-2" /> Import
+                            </Button>
+                        </div>
+                        <Button
+                            onClick={handleSave}
+                            isLoading={saving}
+                            className="flex items-center"
+                        >
+                            <FaSave className="mr-2" /> Save Changes
+                        </Button>
+                    </div>
                 </div>
 
                 {loading ? (

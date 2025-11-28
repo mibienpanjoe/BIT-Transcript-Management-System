@@ -81,12 +81,14 @@ exports.calculateTUAverage = async (studentId, tuId, academicYear) => {
     }
 
     // Save Result
+    const tuData = await TU.findById(tuId);
     await TUResult.findOneAndUpdate(
         { studentId, tuId },
         {
             average: roundedAverage,
             status,
             creditsEarned,
+            semesterId: tuData.semesterId, // Add semesterId for filtering
             academicYear
         },
         { upsert: true, new: true }

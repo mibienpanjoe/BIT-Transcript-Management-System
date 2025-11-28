@@ -93,6 +93,10 @@ const TUsManager = () => {
             if (filterField) {
                 const res = await getPromotions(filterField);
                 setPromotions(res.data);
+                // Smart default
+                if (res.data.length === 1) {
+                    setFilterPromotion(res.data[0]._id);
+                }
             } else {
                 setPromotions([]);
             }
@@ -105,6 +109,10 @@ const TUsManager = () => {
             if (filterPromotion) {
                 const res = await getSemesters(filterPromotion);
                 setSemesters(res.data);
+                // Smart default
+                if (res.data.length === 1) {
+                    setFilterSemester(res.data[0]._id);
+                }
             } else {
                 setSemesters([]);
             }
@@ -115,7 +123,12 @@ const TUsManager = () => {
     const fetchTUs = async () => {
         try {
             setIsLoading(true);
-            const response = await getTUs(filterSemester);
+            const filters = {};
+            if (filterSemester) filters.semesterId = filterSemester;
+            else if (filterPromotion) filters.promotionId = filterPromotion;
+            else if (filterField) filters.fieldId = filterField;
+
+            const response = await getTUs(filters);
             setTus(response.data);
         } catch (error) {
             toast.error('Failed to fetch TUs');
@@ -127,7 +140,7 @@ const TUsManager = () => {
 
     useEffect(() => {
         fetchTUs();
-    }, [filterSemester]);
+    }, [filterField, filterPromotion, filterSemester]);
 
     const handleSubmit = async (data) => {
         setIsSubmitting(true);

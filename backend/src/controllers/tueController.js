@@ -2,13 +2,48 @@ const TUE = require('../models/TUE');
 
 // @desc    Get all TUEs
 // @route   GET /api/tues
-// @access  Private/Admin
+// @access  Private/Admin/SchoolingManager
 exports.getTUEs = async (req, res) => {
     try {
-        const { tuId } = req.query;
+        const { tuId, semesterId, promotionId, fieldId } = req.query;
         let query = { isActive: true };
 
-        if (tuId) query.tuId = tuId;
+        if (tuId) {
+            query.tuId = tuId;
+        } else if (semesterId) {
+            // Find TUs for this semester
+            const TU = require('../models/TU');
+            const tus = await TU.find({ semesterId, isActive: true }).select('_id');
+            const tuIds = tus.map(tu => tu._id);
+            query.tuId = { $in: tuIds };
+        } else if (promotionId) {
+            // Find Semesters for this promotion
+            const Semester = require('../models/Semester');
+            const semesters = await Semester.find({ promotionId, isActive: true }).select('_id');
+            const semesterIds = semesters.map(s => s._id);
+
+            // Find TUs for these semesters
+            const TU = require('../models/TU');
+            const tus = await TU.find({ semesterId: { $in: semesterIds }, isActive: true }).select('_id');
+            const tuIds = tus.map(tu => tu._id);
+            query.tuId = { $in: tuIds };
+        } else if (fieldId) {
+            // Find Promotions for this field
+            const Promotion = require('../models/Promotion');
+            const promotions = await Promotion.find({ fieldId, isActive: true }).select('_id');
+            const promotionIds = promotions.map(p => p._id);
+
+            // Find Semesters for these promotions
+            const Semester = require('../models/Semester');
+            const semesters = await Semester.find({ promotionId: { $in: promotionIds }, isActive: true }).select('_id');
+            const semesterIds = semesters.map(s => s._id);
+
+            // Find TUs for these semesters
+            const TU = require('../models/TU');
+            const tus = await TU.find({ semesterId: { $in: semesterIds }, isActive: true }).select('_id');
+            const tuIds = tus.map(tu => tu._id);
+            query.tuId = { $in: tuIds };
+        }
 
         const tues = await TUE.find(query)
             .populate({

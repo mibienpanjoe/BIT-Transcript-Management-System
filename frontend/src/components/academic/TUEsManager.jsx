@@ -113,6 +113,10 @@ const TUEsManager = () => {
             if (filterField) {
                 const res = await getPromotions(filterField);
                 setPromotions(res.data);
+                // Smart default: if only one promotion, select it
+                if (res.data.length === 1) {
+                    setFilterPromotion(res.data[0]._id);
+                }
             } else {
                 setPromotions([]);
             }
@@ -125,6 +129,10 @@ const TUEsManager = () => {
             if (filterPromotion) {
                 const res = await getSemesters(filterPromotion);
                 setSemesters(res.data);
+                // Smart default
+                if (res.data.length === 1) {
+                    setFilterSemester(res.data[0]._id);
+                }
             } else {
                 setSemesters([]);
             }
@@ -137,6 +145,10 @@ const TUEsManager = () => {
             if (filterSemester) {
                 const res = await getTUs(filterSemester);
                 setTus(res.data);
+                // Smart default
+                if (res.data.length === 1) {
+                    setFilterTU(res.data[0]._id);
+                }
             } else {
                 setTus([]);
             }
@@ -147,7 +159,13 @@ const TUEsManager = () => {
     const fetchTUEs = async () => {
         try {
             setIsLoading(true);
-            const response = await getTUEs(filterTU);
+            const filters = {};
+            if (filterTU) filters.tuId = filterTU;
+            else if (filterSemester) filters.semesterId = filterSemester;
+            else if (filterPromotion) filters.promotionId = filterPromotion;
+            else if (filterField) filters.fieldId = filterField;
+
+            const response = await getTUEs(filters);
             setTues(response.data);
         } catch (error) {
             toast.error('Failed to fetch TUEs');
@@ -159,7 +177,7 @@ const TUEsManager = () => {
 
     useEffect(() => {
         fetchTUEs();
-    }, [filterTU]);
+    }, [filterField, filterPromotion, filterSemester, filterTU]);
 
     const handleSubmit = async (data) => {
         setIsSubmitting(true);

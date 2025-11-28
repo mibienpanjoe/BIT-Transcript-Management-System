@@ -11,17 +11,17 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Protect all routes and restrict to admin
+// Protect all routes
 router.use(protect);
-router.use(authorize('admin'));
 
+// Allow schooling_manager to read, but only admin can create/update/delete
 router.route('/')
-    .get(getSemesters)
-    .post(createSemester);
+    .get(authorize('admin', 'schooling_manager'), getSemesters)
+    .post(authorize('admin'), createSemester);
 
 router.route('/:id')
-    .get(getSemester)
-    .put(updateSemester)
-    .delete(deleteSemester);
+    .get(authorize('admin', 'schooling_manager'), getSemester)
+    .put(authorize('admin'), updateSemester)
+    .delete(authorize('admin'), deleteSemester);
 
 module.exports = router;

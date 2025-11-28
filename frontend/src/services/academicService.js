@@ -44,8 +44,8 @@ export const deletePromotion = async (id) => {
 };
 
 // Semesters
-export const getSemesters = async (promotionId = null) => {
-    const params = promotionId ? { promotionId } : {};
+export const getSemesters = async (filters = {}) => {
+    const params = typeof filters === 'string' ? { promotionId: filters } : filters;
     const response = await api.get('/semesters', { params });
     return response.data;
 };
@@ -66,8 +66,8 @@ export const deleteSemester = async (id) => {
 };
 
 // TUs
-export const getTUs = async (semesterId = null) => {
-    const params = semesterId ? { semesterId } : {};
+export const getTUs = async (filters = {}) => {
+    const params = typeof filters === 'string' ? { semesterId: filters } : filters;
     const response = await api.get('/tus', { params });
     return response.data;
 };
@@ -88,8 +88,8 @@ export const deleteTU = async (id) => {
 };
 
 // TUEs
-export const getTUEs = async (tuId = null) => {
-    const params = tuId ? { tuId } : {};
+export const getTUEs = async (filters = {}) => {
+    const params = typeof filters === 'string' ? { tuId: filters } : filters;
     const response = await api.get('/tues', { params });
     return response.data;
 };

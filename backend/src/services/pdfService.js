@@ -21,7 +21,7 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
         // We want to show the full year's transcript if possible
         const semesters = await Semester.find({
             promotionId: student.promotionId._id
-        }).sort({ startDate: 1 });
+        }).sort({ order: 1 }); // Fixed: use order instead of startDate
 
         const doc = new PDFDocument({
             size: 'A4',
@@ -107,14 +107,12 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
 
             doc.y = tableTop + 20;
 
-            // Fetch TUs
-            const tuResults = await TUResult.find({
+            // Fetch TUs for this semester
+            const semesterTUResults = await TUResult.find({
                 studentId,
+                semesterId: semester._id, // Filter at query level
                 academicYear
             }).populate('tuId');
-
-            // Filter for this semester
-            const semesterTUResults = tuResults.filter(r => r.tuId.semesterId.toString() === semester._id.toString());
 
             for (const tuRes of semesterTUResults) {
                 const tu = tuRes.tuId;

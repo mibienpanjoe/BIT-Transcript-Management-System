@@ -104,6 +104,10 @@ const SemestersManager = () => {
             if (filterField) {
                 const res = await getPromotions(filterField);
                 setPromotions(res.data);
+                // Smart default
+                if (res.data.length === 1) {
+                    setFilterPromotion(res.data[0]._id);
+                }
             } else {
                 setPromotions([]);
             }
@@ -114,7 +118,11 @@ const SemestersManager = () => {
     const fetchSemesters = async () => {
         try {
             setIsLoading(true);
-            const response = await getSemesters(filterPromotion);
+            const filters = {};
+            if (filterPromotion) filters.promotionId = filterPromotion;
+            else if (filterField) filters.fieldId = filterField;
+
+            const response = await getSemesters(filters);
             setSemesters(response.data);
         } catch (error) {
             toast.error('Failed to fetch semesters');
@@ -126,7 +134,7 @@ const SemestersManager = () => {
 
     useEffect(() => {
         fetchSemesters();
-    }, [filterPromotion]);
+    }, [filterField, filterPromotion]);
 
     const handleSubmit = async (data) => {
         setIsSubmitting(true);

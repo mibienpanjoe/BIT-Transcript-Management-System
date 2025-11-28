@@ -14,10 +14,12 @@ const TranscriptViewer = ({ studentId }) => {
             if (!studentId) return;
             try {
                 setLoading(true);
+                setError(null);
                 const response = await getTranscriptData(studentId);
                 setData(response.data);
             } catch (err) {
-                setError('Failed to load transcript data');
+                console.error('Transcript load error:', err);
+                setError(err.response?.data?.message || 'Failed to load transcript data');
             } finally {
                 setLoading(false);
             }
@@ -28,6 +30,9 @@ const TranscriptViewer = ({ studentId }) => {
     if (loading) return <LoadingSpinner />;
     if (error) return <Alert type="error" message={error} />;
     if (!data) return <Alert type="info" message="No transcript data available" />;
+    if (!data.semesters || data.semesters.length === 0) {
+        return <Alert type="warning" message="No semester results calculated yet. Please calculate results first from the Results menu." />;
+    }
 
     return (
         <div className="bg-white shadow rounded-lg p-6">
@@ -50,26 +55,30 @@ const TranscriptViewer = ({ studentId }) => {
                             </div>
                         </div>
 
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead>
-                                <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">TU</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {sem.tus?.map((tu) => (
-                                    <tr key={tu.tuId}>
-                                        <td className="px-4 py-2 text-sm">{tu.name}</td>
-                                        <td className="px-4 py-2 text-sm">{formatGrade(tu.average)}</td>
-                                        <td className="px-4 py-2 text-sm">{tu.creditsEarned}/{tu.totalCredits}</td>
-                                        <td className="px-4 py-2 text-sm">{tu.validationStatus}</td>
+                        {sem.tus && sem.tus.length > 0 ? (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">TU</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {sem.tus.map((tu) => (
+                                        <tr key={tu.tuId}>
+                                            <td className="px-4 py-2 text-sm">{tu.name}</td>
+                                            <td className="px-4 py-2 text-sm">{formatGrade(tu.average)}</td>
+                                            <td className="px-4 py-2 text-sm">{tu.creditsEarned}/{tu.totalCredits}</td>
+                                            <td className="px-4 py-2 text-sm">{tu.validationStatus}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <Alert type="info" message="No TU results available for this semester" />
+                        )}
                     </div>
                 ))}
             </div>

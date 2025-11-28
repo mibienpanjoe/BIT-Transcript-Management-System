@@ -5,10 +5,18 @@ const Semester = require('../models/Semester');
 // @access  Private/Admin
 exports.getSemesters = async (req, res) => {
     try {
-        const { promotionId } = req.query;
+        const { promotionId, fieldId } = req.query;
         let query = { isActive: true };
 
-        if (promotionId) query.promotionId = promotionId;
+        if (promotionId) {
+            query.promotionId = promotionId;
+        } else if (fieldId) {
+            // Find Promotions for this field
+            const Promotion = require('../models/Promotion');
+            const promotions = await Promotion.find({ fieldId, isActive: true }).select('_id');
+            const promotionIds = promotions.map(p => p._id);
+            query.promotionId = { $in: promotionIds };
+        }
 
         const semesters = await Semester.find(query).populate({
             path: 'promotionId',

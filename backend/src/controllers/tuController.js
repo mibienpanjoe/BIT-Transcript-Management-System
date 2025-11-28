@@ -5,10 +5,29 @@ const TU = require('../models/TU');
 // @access  Private/Admin
 exports.getTUs = async (req, res) => {
     try {
-        const { semesterId } = req.query;
+        const { semesterId, promotionId, fieldId } = req.query;
         let query = { isActive: true };
 
-        if (semesterId) query.semesterId = semesterId;
+        if (semesterId) {
+            query.semesterId = semesterId;
+        } else if (promotionId) {
+            // Find Semesters for this promotion
+            const Semester = require('../models/Semester');
+            const semesters = await Semester.find({ promotionId, isActive: true }).select('_id');
+            const semesterIds = semesters.map(s => s._id);
+            query.semesterId = { $in: semesterIds };
+        } else if (fieldId) {
+            // Find Promotions for this field
+            const Promotion = require('../models/Promotion');
+            const promotions = await Promotion.find({ fieldId, isActive: true }).select('_id');
+            const promotionIds = promotions.map(p => p._id);
+
+            // Find Semesters for these promotions
+            const Semester = require('../models/Semester');
+            const semesters = await Semester.find({ promotionId: { $in: promotionIds }, isActive: true }).select('_id');
+            const semesterIds = semesters.map(s => s._id);
+            query.semesterId = { $in: semesterIds };
+        }
 
         const tus = await TU.find(query).populate({
             path: 'semesterId',

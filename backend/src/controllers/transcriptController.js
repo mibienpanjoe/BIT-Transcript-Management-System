@@ -20,10 +20,10 @@ exports.getStudentTranscript = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Student not found' });
         }
 
-        // Fetch all semesters for this promotion
+        // Fetch all semesters for this promotion, sorted by order
         const semesters = await Semester.find({
             promotionId: student.promotionId._id
-        }).sort({ startDate: 1 });
+        }).sort({ order: 1 }); // Fixed: use order instead of startDate
 
         const semestersData = [];
 
@@ -34,16 +34,17 @@ exports.getStudentTranscript = async (req, res) => {
                 academicYear
             });
 
-            // Fetch TU results for this semester
+            // Fetch TU results for this semester with proper population
             const tuResults = await TUResult.find({
                 studentId,
+                semesterId: semester._id, // Filter at query level
                 academicYear
-            }).populate('tuId');
+            }).populate({
+                path: 'tuId',
+                select: 'name code credits'
+            });
 
-            // Filter for this semester
-            const semesterTUResults = tuResults.filter(r => r.tuId.semesterId.toString() === semester._id.toString());
-
-            const tusData = semesterTUResults.map(r => ({
+            const tusData = tuResults.map(r => ({
                 tuId: r.tuId._id,
                 name: r.tuId.name,
                 average: r.average,

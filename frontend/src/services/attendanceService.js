@@ -28,3 +28,24 @@ export const getAttendanceForTUE = async (tueId) => {
     const response = await api.get(`/grades/tue/${tueId}`);
     return response.data;
 };
+
+export const downloadAttendanceTemplate = async (tueId) => {
+    const response = await api.get(`/grades/attendance/template/${tueId}`, {
+        responseType: 'blob',
+    });
+    return response.data;
+};
+
+export const importAttendance = async (tueId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    // Add academicYear if needed, or let backend default to current
+    formData.append('academicYear', new Date().getFullYear().toString());
+
+    const response = await api.post(`/grades/attendance/import/${tueId}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};

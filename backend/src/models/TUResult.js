@@ -11,6 +11,11 @@ const TUResultSchema = new mongoose.Schema({
         ref: 'TU',
         required: true,
     },
+    semesterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Semester',
+        required: true,
+    },
     average: {
         type: Number,
         required: true,
