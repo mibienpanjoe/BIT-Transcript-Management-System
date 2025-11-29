@@ -77,6 +77,49 @@ TUSchema.pre('save', async function (next) {
             return next(error);
         }
     }
+
+    // Validate field consistency when semester is changed
+    if (this.isModified('semesterId') && this.code) {
+        try {
+            const Semester = mongoose.model('Semester');
+            const Promotion = mongoose.model('Promotion');
+            const Field = mongoose.model('Field');
+
+            // Fetch semester with populated relations
+            const semester = await Semester.findById(this.semesterId);
+            if (!semester) {
+                return next(new Error('Semester not found'));
+            }
+
+            const promotion = await Promotion.findById(semester.promotionId);
+            if (!promotion) {
+                return next(new Error('Promotion not found'));
+            }
+
+            const field = await Field.findById(promotion.fieldId);
+            if (!field) {
+                return next(new Error('Field not found'));
+            }
+
+            // Extract field code from TU code
+            const codeMatch = this.code.match(/TU_L\d+S\d+_([A-Z]+)_\d+/);
+            if (codeMatch) {
+                const codeFieldCode = codeMatch[1];
+                const actualFieldCode = field.code;
+
+                if (codeFieldCode !== actualFieldCode) {
+                    return next(new Error(
+                        `Field mismatch: TU code "${this.code}" indicates ${codeFieldCode} field, ` +
+                        `but semester "${semester.name}" belongs to ${actualFieldCode} field. ` +
+                        `Cannot assign TU to a different field's semester.`
+                    ));
+                }
+            }
+        } catch (error) {
+            return next(error);
+        }
+    }
+
     next();
 });
 

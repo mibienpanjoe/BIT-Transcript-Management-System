@@ -20,7 +20,7 @@ const SemesterSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'Please specify semester order'],
         min: 1,
-        max: 6,
+        max: 2,
     },
     isActive: {
         type: Boolean,
@@ -38,5 +38,21 @@ const SemesterSchema = new mongoose.Schema({
 
 // Ensure unique semester per promotion and order
 SemesterSchema.index({ promotionId: 1, order: 1 }, { unique: true });
+
+// Auto-generate semester name based on level and order
+SemesterSchema.pre('save', function (next) {
+    const mapping = {
+        'L1': { 1: 'S1', 2: 'S2' },
+        'L2': { 1: 'S3', 2: 'S4' },
+        'L3': { 1: 'S5', 2: 'S6' },
+        'M1': { 1: 'M1S1', 2: 'M1S2' },
+        'M2': { 1: 'M2S1', 2: 'M2S2' }
+    };
+
+    if (this.level && this.order) {
+        this.name = mapping[this.level]?.[this.order] || `S${this.order}`;
+    }
+    next();
+});
 
 module.exports = mongoose.model('Semester', SemesterSchema);

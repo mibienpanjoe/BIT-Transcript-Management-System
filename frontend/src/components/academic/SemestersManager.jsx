@@ -16,17 +16,41 @@ const SemesterForm = ({ semester, promotions, onSubmit, onCancel, isLoading }) =
         if (semester) {
             reset({ ...semester, promotionId: semester.promotionId?._id || semester.promotionId });
         } else {
-            reset({ name: '', promotionId: '', level: 'L1', order: 1 });
+            reset({ promotionId: '', level: 'L1', order: 1 });
         }
     }, [semester, reset]);
 
+    // Helper to preview name
+    const watchLevel = semester?.level || 'L1';
+    const watchOrder = semester?.order || 1;
+
+    const getSemesterName = (level, order) => {
+        const mapping = {
+            'L1': { 1: 'S1', 2: 'S2' },
+            'L2': { 1: 'S3', 2: 'S4' },
+            'L3': { 1: 'S5', 2: 'S6' },
+            'M1': { 1: 'M1S1', 2: 'M1S2' },
+            'M2': { 1: 'M2S1', 2: 'M2S2' }
+        };
+        return mapping[level]?.[order] || `S${order}`;
+    };
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-                label="Semester Name (e.g., S1, S2)"
-                {...register('name', { required: 'Name is required' })}
-                error={errors.name}
-            />
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                            Semester name is auto-generated based on level and order.
+                        </p>
+                    </div>
+                </div>
+            </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Promotion</label>
                 <select
@@ -51,18 +75,22 @@ const SemesterForm = ({ semester, promotions, onSubmit, onCancel, isLoading }) =
                     <option value="M2">Master 2</option>
                 </select>
             </div>
-            <Input
-                label="Order (1-6)"
-                type="number"
-                placeholder="e.g., 1 for S1, 2 for S2"
-                {...register('order', {
-                    required: 'Order is required',
-                    min: { value: 1, message: 'Order must be between 1 and 6' },
-                    max: { value: 6, message: 'Order must be between 1 and 6' },
-                    valueAsNumber: true
-                })}
-                error={errors.order}
-            />
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Semester Order</label>
+                <select
+                    {...register('order', {
+                        required: 'Order is required',
+                        valueAsNumber: true
+                    })}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                    <option value={1}>1st Semester of Year</option>
+                    <option value={2}>2nd Semester of Year</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                    Select if this is the first or second semester of the academic year.
+                </p>
+            </div>
             <div className="flex justify-end space-x-3 mt-6">
                 <Button variant="secondary" onClick={onCancel} disabled={isLoading}>Cancel</Button>
                 <Button type="submit" isLoading={isLoading}>{semester ? 'Update' : 'Create'}</Button>

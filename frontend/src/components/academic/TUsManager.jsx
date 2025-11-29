@@ -40,7 +40,11 @@ const TUForm = ({ tu, semesters, onSubmit, onCancel, isLoading }) => {
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                     <option value="">Select Semester</option>
-                    {semesters.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                    {semesters.map(s => (
+                        <option key={s._id} value={s._id}>
+                            {s.name} - {s.promotionId?.fieldId?.name || '?'} ({s.promotionId?.name || '?'})
+                        </option>
+                    ))}
                 </select>
                 {errors.semesterId && <p className="mt-1 text-sm text-red-600">{errors.semesterId.message}</p>}
             </div>
@@ -71,6 +75,7 @@ const TUsManager = () => {
     const [fields, setFields] = useState([]);
     const [promotions, setPromotions] = useState([]);
     const [semesters, setSemesters] = useState([]);
+    const [modalSemesters, setModalSemesters] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTU, setSelectedTU] = useState(null);
@@ -142,6 +147,78 @@ const TUsManager = () => {
         fetchTUs();
     }, [filterField, filterPromotion, filterSemester]);
 
+    // Load semesters for the modal based on context
+    const loadSemestersForModal = async (tu) => {
+        try {
+            let fieldContext = null;
+
+            // Parse TU code to extract field
+            if (tu?.code) {
+                const codeMatch = tu.code.match(/TU_L\d+S\d+_([A-Z]+)_\d+/);
+                if (codeMatch) {
+                    const fieldCode = codeMatch[1];
+
+                    // Fetch all fields
+                    const fieldsRes = await getFields();
+                    fieldContext = fieldsRes.data.find(f => f.code === fieldCode);
+
+                    if (fieldContext) {
+                        // Fetch promotions for this field
+                        const promotionsRes = await getPromotions(fieldContext._id);
+
+                        // Fetch semesters for all promotions in this field
+                        const semesterPromises = promotionsRes.data.map(promo =>
+                            getSemesters({ promotionId: promo._id })
+                        );
+
+                        const semesterResults = await Promise.all(semesterPromises);
+                        const allFieldSemesters = semesterResults.flatMap(r => r.data);
+
+                        setModalSemesters(allFieldSemesters);
+
+                        toast.info(
+                            `Loaded semesters for ${fieldContext.name} only (from TU code)`,
+                            { autoClose: 2000 }
+                        );
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: use filter context
+            let res;
+            if (filterPromotion) {
+                res = await getSemesters({ promotionId: filterPromotion });
+            } else if (filterField) {
+                const promotionsRes = await getPromotions(filterField);
+                const semesterPromises = promotionsRes.data.map(p =>
+                    getSemesters({ promotionId: p._id })
+                );
+                const semesterResults = await Promise.all(semesterPromises);
+                res = { data: semesterResults.flatMap(r => r.data) };
+            } else {
+                res = await getSemesters({});
+            }
+
+            setModalSemesters(res.data);
+        } catch (error) {
+            console.error('Failed to load semesters for modal:', error);
+            toast.error('Failed to load semesters');
+        }
+    };
+
+    const handleEditClick = async (row) => {
+        setSelectedTU(row);
+        await loadSemestersForModal(row);
+        setIsModalOpen(true);
+    };
+
+    const handleAddClick = async () => {
+        setSelectedTU(null);
+        await loadSemestersForModal(null);
+        setIsModalOpen(true);
+    };
+
     const handleSubmit = async (data) => {
         setIsSubmitting(true);
         try {
@@ -182,7 +259,7 @@ const TUsManager = () => {
 
     const actions = (row) => (
         <div className="flex space-x-2 justify-end">
-            <button onClick={() => { setSelectedTU(row); setIsModalOpen(true); }} className="text-blue-600 hover:text-blue-900"><FaEdit /></button>
+            <button onClick={() => handleEditClick(row)} className="text-blue-600 hover:text-blue-900"><FaEdit /></button>
             <button onClick={() => handleDelete(row._id)} className="text-red-600 hover:text-red-900"><FaTrash /></button>
         </div>
     );
@@ -204,11 +281,11 @@ const TUsManager = () => {
                         {semesters.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                     </select>
                 </div>
-                <Button onClick={() => { setSelectedTU(null); setIsModalOpen(true); }} disabled={!filterSemester}><FaPlus className="mr-2" /> Add TU</Button>
+                <Button onClick={handleAddClick} disabled={!filterPromotion && !filterField}><FaPlus className="mr-2" /> Add TU</Button>
             </div>
             {isLoading ? <div className="text-center">Loading...</div> : <Table columns={columns} data={tus} actions={actions} />}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedTU ? 'Edit TU' : 'Add TU'}>
-                <TUForm tu={selectedTU} semesters={semesters} onSubmit={handleSubmit} onCancel={() => setIsModalOpen(false)} isLoading={isSubmitting} />
+                <TUForm tu={selectedTU} semesters={modalSemesters} onSubmit={handleSubmit} onCancel={() => setIsModalOpen(false)} isLoading={isSubmitting} />
             </Modal>
         </div>
     );
