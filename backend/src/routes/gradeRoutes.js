@@ -14,6 +14,7 @@ const {
 } = require('../controllers/gradeController');
 
 const { protect, authorize } = require('../middleware/auth');
+const { validateGradeContext, validateBulkGradeContext } = require('../middleware/gradeValidation');
 
 const router = express.Router();
 
@@ -33,16 +34,16 @@ router.get('/template/:tueId', authorize('admin', 'teacher'), downloadTemplate);
 // Download attendance template for TUE
 router.get('/attendance/template/:tueId', authorize('admin', 'schooling_manager'), downloadAttendanceTemplate);
 
-// Import grades from Excel
-router.post('/import/:tueId', authorize('admin', 'teacher'), upload.single('file'), importGrades);
+// Import grades from Excel (with validation middleware)
+router.post('/import/:tueId', authorize('admin', 'teacher'), upload.single('file'), validateBulkGradeContext, importGrades);
 
-// Import attendance from Excel
-router.post('/attendance/import/:tueId', authorize('admin', 'schooling_manager'), upload.single('file'), importAttendance);
+// Import attendance from Excel (with validation middleware)
+router.post('/attendance/import/:tueId', authorize('admin', 'schooling_manager'), upload.single('file'), validateBulkGradeContext, importAttendance);
 
 // Teachers and Admins can view and manage grades
 router.route('/')
     .get(authorize('admin', 'teacher', 'schooling_manager'), getGrades)
-    .post(authorize('admin', 'teacher', 'schooling_manager'), createOrUpdateGrade);
+    .post(authorize('admin', 'teacher', 'schooling_manager'), validateGradeContext, createOrUpdateGrade);
 
 router.route('/:id')
     .get(authorize('admin', 'teacher', 'schooling_manager'), getGrade)

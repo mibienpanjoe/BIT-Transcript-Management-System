@@ -3,7 +3,8 @@ const { protect, authorize } = require('../middleware/auth');
 const {
     getStudentTranscript,
     generateTranscriptPDF,
-    bulkGenerateTranscripts
+    bulkGenerateTranscripts,
+    validateTranscript
 } = require('../controllers/transcriptController');
 
 const router = express.Router();
@@ -12,6 +13,7 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize('admin'));
 
+router.get('/validate/:studentId', validateTranscript);
 router.get('/student/:studentId', getStudentTranscript);
 router.get('/student/:studentId/pdf', generateTranscriptPDF);
 router.get('/semester/:semesterId/student/:studentId/pdf', generateTranscriptPDF); // Support semester specific

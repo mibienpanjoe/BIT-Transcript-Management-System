@@ -121,8 +121,8 @@ const GradeEntry = ({ tueId }) => {
                     : student?.grade?.participation || 0,
                 evaluation: changes.evaluation !== undefined
                     ? changes.evaluation
-                    : student?.grade?.evaluation || 0,
-                academicYear: new Date().getFullYear().toString()
+                    : student?.grade?.evaluation || 0
+                // academicYear removed - backend derives it from student's promotion
             };
 
             await submitGrade(payload);
@@ -198,8 +198,8 @@ const GradeEntry = ({ tueId }) => {
                         : student?.grade?.participation || 0,
                     evaluation: changes.evaluation !== undefined
                         ? changes.evaluation
-                        : student?.grade?.evaluation || 0,
-                    academicYear: new Date().getFullYear().toString()
+                        : student?.grade?.evaluation || 0
+                    // academicYear removed - backend derives it from student's promotion
                 };
                 return submitGrade(payload);
             });
@@ -253,7 +253,7 @@ const GradeEntry = ({ tueId }) => {
 
         const formData = new FormData();
         formData.append('file', importFile);
-        formData.append('academicYear', new Date().getFullYear().toString());
+        // academicYear removed - backend derives it from TUE's promotion
 
         setImporting(true);
         try {
@@ -277,6 +277,34 @@ const GradeEntry = ({ tueId }) => {
 
     return (
         <div className="space-y-6">
+            {/* Promotion Context Banner */}
+            {gradeData.tue?.tuId?.semesterId?.promotionId && (
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg shadow-md">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold">
+                                {gradeData.tue.tuId.semesterId.promotionId.name}
+                            </h3>
+                            <p className="text-sm opacity-90 mt-1">
+                                {gradeData.tue.name} ({gradeData.tue.code})
+                            </p>
+                        </div>
+                        <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
+                            <p className="text-xs uppercase tracking-wide opacity-90">Academic Year</p>
+                            <p className="text-2xl font-bold">
+                                {gradeData.tue.tuId.semesterId.promotionId.academicYear || 'N/A'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-3 p-2 bg-blue-800 bg-opacity-30 rounded text-sm">
+                        <p className="flex items-center">
+                            <span className="mr-2">ℹ️</span>
+                            Grades will be automatically saved for the academic year shown above.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex justify-between items-start mb-6">
                     <div>

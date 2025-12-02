@@ -8,7 +8,7 @@ import Dashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import StudentManagement from './pages/admin/StudentManagement';
 import AcademicStructure from './pages/admin/AcademicStructure';
-import ResultsManagement from './pages/admin/ResultsManagement';
+
 import TranscriptManagement from './pages/admin/TranscriptManagement';
 import GradeViewing from './pages/admin/GradeViewing';
 import AttendanceManagement from './pages/manager/AttendanceManagement';
@@ -79,14 +79,7 @@ function App() {
               }
             />
 
-            <Route
-              path="/results"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <ResultsManagement />
-                </ProtectedRoute>
-              }
-            />
+
 
             <Route
               path="/transcripts"

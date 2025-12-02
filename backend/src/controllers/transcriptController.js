@@ -2,7 +2,7 @@ const Student = require('../models/Student');
 const Semester = require('../models/Semester');
 const SemesterResult = require('../models/SemesterResult');
 const TUResult = require('../models/TUResult');
-const pdfService = require('../services/pdfService');
+const pdfService = require('../services/puppeteerPdfService');
 
 // @desc    Get student transcript data for viewer
 // @route   GET /api/transcripts/student/:studentId
@@ -90,6 +90,111 @@ exports.generateTranscriptPDF = async (req, res) => {
         const { studentId } = req.params;
         const { semesterId } = req.params; // Optional if route is /semester/:semesterId/student/:studentId/pdf
         const academicYear = req.query.academicYear || new Date().getFullYear().toString();
+
+        // Headers are set in the service
+        // res.setHeader('Content-Type', 'application/pdf');
+        // const filename = `transcript_${studentId}.pdf`;
+        // res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+        await pdfService.generateTranscript(studentId, semesterId, academicYear, res);
+
+    } catch (err) {
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: err.message });
+        }
+    }
+};
+
+// @desc    Bulk Generate Transcripts
+// @route   POST /api/transcripts/bulk-generate
+// @access  Private/Admin
+exports.bulkGenerateTranscripts = async (req, res) => {
+    try {
+        const { studentIds, semesterId } = req.body;
+
+        if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'No students provided' });
+        }
+
+        // In a real production app, this should be a background job (Bull/Redis)
+        // For now, we'll just acknowledge the request.
+        // Implementing actual bulk generation and zipping would take significant time
+        // and might timeout the request.
+
+        // TODO: Implement background job for bulk generation
+
+        res.status(200).json({
+            success: true,
+            message: `Bulk generation started for ${studentIds.length} students. (Note: This is a placeholder response)`
+        });
+
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// @desc    Validate Transcript Readiness
+// @route   GET /api/transcripts/validate/:studentId
+// @access  Private/Admin
+exports.validateTranscript = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { academicYear, level } = req.query;
+
+        if (!academicYear || !level) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required parameters: academicYear, level'
+            });
+        }
+
+        const validationService = require('../services/validationService');
+        const validation = await validationService.validateTranscriptReadiness(
+            studentId,
+            academicYear,
+            level
+        );
+
+        res.status(200).json({
+            success: true,
+            ...validation
+        });
+    } catch (error) {
+        console.error('Error validating transcript:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to validate transcript readiness'
+        });
+    }
+};
+
+// @desc    Generate Transcript PDF
+// @route   GET /api/transcripts/student/:studentId/pdf
+// @access  Private/Admin
+exports.generateTranscriptPDF = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { semesterId } = req.params; // Optional if route is /semester/:semesterId/student/:studentId/pdf
+        const academicYear = req.query.academicYear || new Date().getFullYear().toString();
+        const level = req.query.level; // Optional validation
+
+        // Optional: Validate readiness before generating
+        if (level) {
+            const validationService = require('../services/validationService');
+            const validation = await validationService.validateTranscriptReadiness(
+                studentId,
+                academicYear,
+                level
+            );
+
+            if (!validation.readyForTranscript) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot generate transcript. Missing required data.',
+                    validation
+                });
+            }
+        }
 
         res.setHeader('Content-Type', 'application/pdf');
         const filename = `transcript_${studentId}.pdf`;

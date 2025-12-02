@@ -17,6 +17,7 @@ const gradeRoutes = require('./routes/gradeRoutes');
 const calculationRoutes = require('./routes/calculationRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
 const transcriptRoutes = require('./routes/transcriptRoutes');
+const puppeteerPdfService = require('./services/puppeteerPdfService');
 
 // Load environment variables
 dotenv.config();
@@ -71,6 +72,25 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    // Initialize Puppeteer browser and load templates
+    try {
+        await puppeteerPdfService.loadTemplates();
+        logger.info('PDF templates loaded and cached');
+        await puppeteerPdfService.initBrowser();
+        logger.info('Puppeteer browser initialized');
+    } catch (err) {
+        logger.error('Failed to initialize Puppeteer:', err);
+    }
 });
+
+// Graceful shutdown
+const shutdown = async () => {
+    logger.info('Shutting down server...');
+    await puppeteerPdfService.closeBrowser();
+    process.exit(0);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

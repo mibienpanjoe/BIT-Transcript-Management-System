@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Transcript</title>
+    <style>
+        /* CSS will be injected here or loaded from external file */
+            {
+                {
+                    {
+                    styles
+                }
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="institute-name">BURKINABE INSTITUTE OF TECHNOLOGY</div>
+        <div class="document-title">ACADEMIC TRANSCRIPT</div>
+    </div>
+
+    <div class="student-info">
+        <div class="info-column">
+            <div class="info-row">
+                <div class="info-label">Name:</div>
+                <div class="info-value">{{student.lastName}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">First Name(s):</div>
+                <div class="info-value">{{student.firstName}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Student ID:</div>
+                <div class="info-value">{{student.studentId}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Date & Place of birth:</div>
+                <div class="info-value">{{student.dateOfBirth}} at {{student.placeOfBirth}}</div>
+            </div>
+        </div>
+        <div class="info-column">
+            <div class="info-row">
+                <div class="info-label">Field:</div>
+                <div class="info-value">{{student.field}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Speciality:</div>
+                <div class="info-value">{{student.speciality}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Mention:</div>
+                <div class="info-value">{{annual.mention}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Academic year:</div>
+                <div class="info-value">{{academicYear}}</div>
+            </div>
+        </div>
+    </div>
+
+    {{#each semesters}}
+    <div class="semester-section">
+        <div
+            style="background-color: #333; color: white; padding: 5px; font-weight: bold; text-align: center; margin-bottom: 0;">
+            {{this.name}}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-tu">TU</th>
+                    <th class="col-tue">TUE</th>
+                    <th class="col-credits">Credits</th>
+                    <th class="col-grade">Grade/20</th>
+                    <th class="col-acquired">Acquired</th>
+                    <th class="col-validation">Validation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each this.tus}}
+                <tr class="tu-row">
+                    <td class="col-tu">{{this.name}}</td>
+                    <td class="col-tue"></td>
+                    <td class="col-credits">{{this.totalCredits}}</td>
+                    <td class="col-grade">{{this.average}}</td>
+                    <td class="col-acquired">{{this.creditsEarned}}</td>
+                    <td class="col-validation">{{this.validationStatus}}</td>
+                </tr>
+                {{#each this.tues}}
+                <tr class="tue-row">
+                    <td class="col-tu"></td>
+                    <td class="col-tue">{{this.name}}</td>
+                    <td class="col-credits">{{this.credits}}</td>
+                    <td class="col-grade">{{this.grade}}</td>
+                    <td class="col-acquired">-</td>
+                    <td class="col-validation">-</td>
+                </tr>
+                {{/each}}
+                {{/each}}
+                <tr class="summary-row">
+                    <td colspan="2" class="summary-label">Semester average & Total credits acquired</td>
+                    <td class="col-credits">{{this.totalCredits}}</td>
+                    <td class="col-grade">{{this.average}}</td>
+                    <td class="col-acquired">{{this.creditsEarned}}</td>
+                    <td class="col-validation"></td>
+                </tr>
+                <tr class="summary-row">
+                    <td colspan="2" class="summary-label">Decision for the semester</td>
+                    <td colspan="4" style="text-align: center;">{{this.status}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {{/each}}
+
+    <div class="annual-summary">
+        <div class="annual-row">
+            <div class="annual-label">Annual Average:</div>
+            <div>{{annual.average}}</div>
+        </div>
+        <div class="annual-row">
+            <div class="annual-label">Annual Result:</div>
+            <div>{{annual.result}}</div>
+        </div>
+        <div class="annual-row">
+            <div class="annual-label">Rating:</div>
+            <div>{{annual.rating}}</div>
+        </div>
+        <div class="annual-row">
+            <div class="annual-label">Total credits acquired:</div>
+            <div>{{annual.totalCredits}}</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="legend">
+            <strong>N.B.:</strong><br>
+            V: TU Validated; NV: TU Not Validated; V/C: TU Validated by Compensation.<br>
+            A semester is validated if and only if the semester average >= 10 and the average of each TU >= 08<br>
+            Rating according TU/semester average (Av):<br>
+            Fail: F (<10); Passable: D (10-11), D+ (11-12); Fairly Good: C (12-13), C+ (13-14); Good: B (14-15), B+
+                (15-16); Very Good: A (16-17), A+ (17-18); Excellent: A++ (>=18)
+        </div>
+
+        <div class="signatures">
+            <div class="signature-block">
+                <div>Koudougou, {{currentDate}}</div>
+                <br>
+                <div>Academic Director</div>
+                <br><br><br>
+                <div>Dr XXXXXXXXXXXXXXXX</div>
+            </div>
+        </div>
+
+        <div class="auth-text">
+            Autorisation de création: N° 2018-00/01347/MESRSI/SG/DGESup/DIPES du 13 Septembre 2018<br>
+            Autorisation d'ouverture: N° 2018-00001511/MESRSI/SG/DGESup/DIPES du 25 Septembre 2018
+        </div>
+    </div>
+</body>
+
+</html>

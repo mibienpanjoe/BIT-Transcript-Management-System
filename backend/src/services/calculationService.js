@@ -197,3 +197,165 @@ exports.calculateSemesterAverage = async (studentId, semesterId, academicYear) =
 
     return { average: roundedAverage, status, mention };
 };
+
+// Calculate Annual Result
+exports.calculateAnnualResult = async (studentId, level, academicYear) => {
+    const mongoose = require('mongoose');
+    const Semester = require('../models/Semester');
+    const SemesterResult = require('../models/SemesterResult');
+    const AnnualResult = require('../models/AnnualResult');
+
+    // Get semester pair for this level
+    const semesterMapping = {
+        'L1': ['S1', 'S2'],
+        'L2': ['S3', 'S4'],
+        'L3': ['S5', 'S6'],
+        'M1': ['S1', 'S2'],
+        'M2': ['S3', 'S4']
+    };
+
+    const [sem1Name, sem2Name] = semesterMapping[level] || [];
+
+    if (!sem1Name || !sem2Name) {
+        throw new Error(`Invalid level: ${level}`);
+    }
+
+    // Find the student's semesters for this year
+    const student = await mongoose.model('Student').findById(studentId)
+        .populate('promotionId');
+
+    if (!student || !student.promotionId) {
+        throw new Error('Student or promotion not found');
+    }
+
+    // Get semesters for this promotion
+    const semesters = await Semester.find({
+        promotionId: student.promotionId._id
+    });
+
+    // Find S1 and S2 equivalents (by order)
+    const sem1 = semesters.find(s => s.order === 1);
+    const sem2 = semesters.find(s => s.order === 2);
+
+    if (!sem1 || !sem2) {
+        throw new Error(`Both semesters required for ${level}`);
+    }
+
+    // Fetch semester results
+    const sem1Result = await SemesterResult.findOne({
+        studentId,
+        semesterId: sem1._id,
+        academicYear
+    });
+
+    const sem2Result = await SemesterResult.findOne({
+        studentId,
+        semesterId: sem2._id,
+        academicYear
+    });
+
+    // Validation
+    if (!sem1Result || !sem2Result) {
+        throw new Error('Both semester results must be calculated before annual calculation');
+    }
+
+    // Calculate weighted annual average (CORRECT FORMULA)
+    const totalWeighted = (sem1Result.average * sem1Result.totalCredits)
+        + (sem2Result.average * sem2Result.totalCredits);
+    const totalCredits = sem1Result.totalCredits + sem2Result.totalCredits;
+    const annualAverage = Math.round((totalWeighted / totalCredits) * 100) / 100;
+
+    // Determine validation status
+    const bothValidated = (sem1Result.status === 'VALIDATED' && sem2Result.status === 'VALIDATED');
+    const meetsMinimumCredits = totalCredits >= 48; // 80% of 60
+    const isComplete = true;
+
+    const status = (bothValidated && meetsMinimumCredits)
+        ? 'VALIDATED'
+        : 'NOT VALIDATED';
+
+    // Calculate annual mention
+    let mention = 'F';
+    if (status === 'VALIDATED') {
+        if (annualAverage >= 18) mention = 'A++';
+        else if (annualAverage >= 17) mention = 'A+';
+        else if (annualAverage >= 16) mention = 'A';
+        else if (annualAverage >= 15) mention = 'B+';
+        else if (annualAverage >= 14) mention = 'B';
+        else if (annualAverage >= 13) mention = 'C+';
+        else if (annualAverage >= 12) mention = 'C';
+        else if (annualAverage >= 11) mention = 'D+';
+        else if (annualAverage >= 10) mention = 'D';
+    }
+
+    // Track missing data
+    const missingData = [];
+    if (!bothValidated) {
+        if (sem1Result.status !== 'VALIDATED') {
+            missingData.push({
+                type: 'SEMESTER_NOT_VALIDATED',
+                semesterId: sem1._id,
+                description: `${sem1.name} not validated`
+            });
+        }
+        if (sem2Result.status !== 'VALIDATED') {
+            missingData.push({
+                type: 'SEMESTER_NOT_VALIDATED',
+                semesterId: sem2._id,
+                description: `${sem2.name} not validated`
+            });
+        }
+    }
+    if (!meetsMinimumCredits) {
+        missingData.push({
+            type: 'INSUFFICIENT_CREDITS',
+            description: `Only ${totalCredits}/60 credits earned (minimum 48 required)`
+        });
+    }
+
+    // Save to AnnualResult
+    const annualResult = await AnnualResult.findOneAndUpdate(
+        { studentId, academicYear, level },
+        {
+            semester1: {
+                semesterId: sem1._id,
+                name: sem1.name,
+                average: sem1Result.average,
+                credits: sem1Result.totalCredits,
+                status: sem1Result.status,
+                mention: sem1Result.mention,
+                resultId: sem1Result._id
+            },
+            semester2: {
+                semesterId: sem2._id,
+                name: sem2.name,
+                average: sem2Result.average,
+                credits: sem2Result.totalCredits,
+                status: sem2Result.status,
+                mention: sem2Result.mention,
+                resultId: sem2Result._id
+            },
+            annualAverage,
+            totalCredits,
+            status,
+            mention,
+            meetsMinimumCredits,
+            bothSemestersValidated: bothValidated,
+            isComplete,
+            missingData,
+            completedAt: Date.now(),
+            updatedAt: Date.now()
+        },
+        { upsert: true, new: true }
+    );
+
+    return {
+        annualAverage,
+        totalCredits,
+        status,
+        mention,
+        bothSemestersValidated: bothValidated,
+        meetsMinimumCredits,
+        annualResultId: annualResult._id
+    };
+};

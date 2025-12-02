@@ -2,6 +2,7 @@ const Grade = require('../models/Grade');
 const Student = require('../models/Student');
 const TUE = require('../models/TUE');
 const excelService = require('../services/excelService');
+const calculationService = require('../services/calculationService');
 
 // @desc    Get all grades
 // @route   GET /api/grades
@@ -65,10 +66,16 @@ exports.getGrade = async (req, res) => {
 // @access  Private/Admin/Teacher
 exports.createOrUpdateGrade = async (req, res) => {
     try {
-        const { studentId, tueId, presence, participation, evaluation, academicYear } = req.body;
+        const { studentId, tueId, presence, participation, evaluation } = req.body;
 
-        // Check if grade exists
-        let grade = await Grade.findOne({ studentId, tueId });
+        // Academic year is now derived by middleware and attached to req.body
+        const academicYear = req.body.academicYear;
+
+        // Log academic year derivation for debugging
+        console.log(`[Grade] Creating/updating grade for student ${studentId}, TUE ${tueId}, academic year: ${academicYear}`);
+
+        // Check if grade exists for this student, TUE, and academic year
+        let grade = await Grade.findOne({ studentId, tueId, academicYear });
 
         // Teacher lock check: prevent teachers from modifying existing grades
         if (req.user.role === 'teacher' && grade) {
@@ -95,30 +102,58 @@ exports.createOrUpdateGrade = async (req, res) => {
         }
 
         if (grade) {
-            // Update
+            // Update existing grade
             grade.presence = presence !== undefined ? presence : grade.presence;
             grade.participation = participation !== undefined ? participation : grade.participation;
             grade.evaluation = evaluation !== undefined ? evaluation : grade.evaluation;
-            grade.academicYear = academicYear || grade.academicYear;
+            // Academic year should not change for existing grades
 
             await grade.save();
+            console.log(`[Grade] Updated grade ID ${grade._id} for academic year ${academicYear}`);
         } else {
-            // Create
+            // Create new grade
             grade = await Grade.create({
                 studentId,
                 tueId,
                 presence,
                 participation,
                 evaluation,
-                academicYear
+                academicYear // Derived from middleware
             });
+            console.log(`[Grade] Created new grade ID ${grade._id} for academic year ${academicYear}`);
+        }
+
+        // ------------------------------------------------------------------
+        // AUTO-CALCULATION TRIGGER
+        // ------------------------------------------------------------------
+        try {
+            // 1. Get TU ID from TUE
+            const tue = await TUE.findById(tueId);
+            if (tue) {
+                // 2. Calculate TU Average
+                console.log(`[Calculation] Triggering TU calculation for TU ${tue.tuId}`);
+                await calculationService.calculateTUAverage(studentId, tue.tuId, academicYear);
+
+                // 3. Calculate Semester Average
+                // We need the semester ID from the TU
+                const tu = await TUE.model('TU').findById(tue.tuId);
+                if (tu) {
+                    console.log(`[Calculation] Triggering Semester calculation for Sem ${tu.semesterId}`);
+                    await calculationService.calculateSemesterAverage(studentId, tu.semesterId, academicYear);
+                }
+            }
+        } catch (calcError) {
+            console.error('[Calculation] Auto-calculation failed:', calcError);
+            // Don't fail the request, just log the error
         }
 
         res.status(200).json({
             success: true,
             data: grade,
+            message: `Grade saved for academic year ${academicYear}`
         });
     } catch (err) {
+        console.error('[Grade] Error creating/updating grade:', err);
         res.status(400).json({ success: false, message: err.message });
     }
 };

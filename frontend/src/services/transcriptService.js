@@ -10,7 +10,10 @@ export const generateTranscriptPDF = (studentId, semesterId = null) => {
         : `/transcripts/student/${studentId}/pdf`;
 
     return api.get(url, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+            'Accept': 'application/pdf'
+        }
     });
 };
 

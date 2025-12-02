@@ -25,8 +25,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { name: 'Academic Structure', path: '/academic', icon: <FaBook />, roles: ['admin'] },
         { name: 'Grades', path: '/grades', icon: <FaClipboardList />, roles: ['admin'] },
         { name: 'Attendance', path: '/attendance', icon: <FaChalkboardTeacher />, roles: ['admin', 'schooling_manager'] },
-        { name: 'Results', path: '/results', icon: <FaChartBar />, roles: ['admin'] },
-        { name: 'Transcripts', path: '/transcripts', icon: <FaFileAlt />, roles: ['admin'] },
+        { name: 'Results & Transcripts', path: '/transcripts', icon: <FaChartBar />, roles: ['admin'] },
         { name: 'Settings', path: '/settings', icon: <FaCog />, roles: ['admin', 'teacher', 'schooling_manager'] },
     ];
 

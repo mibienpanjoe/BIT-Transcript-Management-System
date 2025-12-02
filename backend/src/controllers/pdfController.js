@@ -1,4 +1,4 @@
-const pdfService = require('../services/pdfService');
+const pdfService = require('../services/puppeteerPdfService');
 
 // @desc    Generate Transcript PDF
 // @route   GET /api/pdf/transcript
@@ -12,13 +12,14 @@ exports.getTranscript = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide studentId and academicYear' });
         }
 
-        res.setHeader('Content-Type', 'application/pdf');
+        // Headers are set in the service
+        // res.setHeader('Content-Type', 'application/pdf');
 
-        const filename = semesterId
-            ? `transcript_${studentId}_${semesterId}.pdf`
-            : `transcript_${studentId}_${academicYear}.pdf`;
+        // const filename = semesterId
+        //     ? `transcript_${studentId}_${semesterId}.pdf`
+        //     : `transcript_${studentId}_${academicYear}.pdf`;
 
-        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        // res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
         await pdfService.generateTranscript(studentId, semesterId, academicYear, res);
     } catch (err) {

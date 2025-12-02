@@ -51,6 +51,33 @@ exports.getStudents = async (req, res) => {
     }
 };
 
+// @desc    Get students by promotion
+// @route   GET /api/students/promotion/:promotionId
+// @access  Private/Admin
+exports.getStudentsByPromotion = async (req, res) => {
+    try {
+        const students = await Student.find({
+            promotionId: req.params.promotionId,
+            isActive: true
+        })
+            .populate('fieldId', 'name code')
+            .populate('promotionId', 'name level')
+            .sort({ studentId: 1 });
+
+        res.status(200).json({
+            success: true,
+            count: students.length,
+            data: students,
+        });
+    } catch (err) {
+        console.error('Error fetching students by promotion:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch students for this promotion'
+        });
+    }
+};
+
 // @desc    Get single student
 // @route   GET /api/students/:id
 // @access  Private/Admin

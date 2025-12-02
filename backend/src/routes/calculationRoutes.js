@@ -4,6 +4,9 @@ const {
     calculateSemester,
     getTUResults,
     getSemesterResults,
+    calculateAnnual,
+    getAnnualResults,
+    bulkCalculateAnnual
 } = require('../controllers/calculationController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -18,5 +21,8 @@ router.post('/tu', calculateTU);
 router.post('/semester', calculateSemester);
 router.get('/tu-results', getTUResults);
 router.get('/semester-results', getSemesterResults);
+router.post('/annual', calculateAnnual);
+router.post('/annual/bulk', bulkCalculateAnnual);
+router.get('/annual-results', getAnnualResults);
 
 module.exports = router;
