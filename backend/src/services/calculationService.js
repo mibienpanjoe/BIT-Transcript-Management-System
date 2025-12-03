@@ -187,13 +187,16 @@ exports.calculateSemesterAverage = async (studentId, semesterId, academicYear) =
         { studentId, semesterId },
         {
             average: roundedAverage,
-            totalCredits: status === 'VALIDATED' ? totalCredits : 0, // Or sum of acquired credits? Usually validated semester = all credits.
+            totalCredits: totalCredits, // Always store actual credits for calculation purposes
             status,
             mention,
             academicYear
         },
         { upsert: true, new: true }
     );
+
+    // Trigger annual calculation check
+    await checkAndCalculateAnnual(studentId, semesterId, academicYear);
 
     return { average: roundedAverage, status, mention };
 };
@@ -263,12 +266,19 @@ exports.calculateAnnualResult = async (studentId, level, academicYear) => {
     const totalWeighted = (sem1Result.average * sem1Result.totalCredits)
         + (sem2Result.average * sem2Result.totalCredits);
     const totalCredits = sem1Result.totalCredits + sem2Result.totalCredits;
+
+    // Handle division by zero (when both semesters have 0 credits due to NOT VALIDATED status)
+    if (totalCredits === 0) {
+        throw new Error('Cannot calculate annual average: Both semesters have 0 credits. At least one semester must be validated.');
+    }
+
     const annualAverage = Math.round((totalWeighted / totalCredits) * 100) / 100;
 
     // Determine validation status
     const bothValidated = (sem1Result.status === 'VALIDATED' && sem2Result.status === 'VALIDATED');
     const meetsMinimumCredits = totalCredits >= 48; // 80% of 60
     const isComplete = true;
+
 
     const status = (bothValidated && meetsMinimumCredits)
         ? 'VALIDATED'
@@ -359,3 +369,70 @@ exports.calculateAnnualResult = async (studentId, level, academicYear) => {
         annualResultId: annualResult._id
     };
 };
+
+/**
+ * Check if annual calculation is possible and trigger it
+ * Called after a semester calculation completes
+ */
+async function checkAndCalculateAnnual(studentId, semesterId, academicYear) {
+    try {
+        const semester = await Semester.findById(semesterId).populate('promotionId');
+        if (!semester || !semester.promotionId) {
+            return;
+        }
+
+        const level = semester.promotionId.level;
+        const Student = require('../models/Student');
+
+        const student = await Student.findById(studentId).populate('promotionId');
+        if (!student || !student.promotionId) {
+            return;
+        }
+
+        const semesters = await Semester.find({
+            promotionId: student.promotionId._id
+        }).sort({ order: 1 });
+
+        if (semesters.length < 2) {
+            return;
+        }
+
+        const sem1 = semesters[0];
+        const sem2 = semesters[1];
+
+        const sem1Result = await SemesterResult.findOne({
+            studentId,
+            semesterId: sem1._id,
+            academicYear
+        });
+
+        const sem2Result = await SemesterResult.findOne({
+            studentId,
+            semesterId: sem2._id,
+            academicYear
+        });
+
+        if (sem1Result && sem2Result) {
+            console.log(`[AutoCalc] Both semesters complete for student ${studentId}, checking annual...`);
+
+            const AnnualResult = require('../models/AnnualResult');
+
+            const existingAnnual = await AnnualResult.findOne({
+                studentId,
+                academicYear,
+                level
+            });
+
+            if (!existingAnnual) {
+                console.log(`[AutoCalc] Calculating annual result for student ${studentId}...`);
+                await exports.calculateAnnualResult(studentId, level, academicYear);
+                console.log(`[AutoCalc] Annual result calculated successfully for student ${studentId}`);
+            } else {
+                console.log(`[AutoCalc] Annual result already exists for student ${studentId}, skipping`);
+            }
+        }
+    } catch (error) {
+        console.error('[AutoCalc] Error in checkAndCalculateAnnual:', error);
+    }
+}
+
