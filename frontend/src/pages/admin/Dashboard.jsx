@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getUsers } from '../../services/userService';
 import { getStudents } from '../../services/studentService';
 import { getFields } from '../../services/academicService';
@@ -99,18 +100,27 @@ const Dashboard = () => {
             <div className="bg-white shadow rounded-lg p-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                    <Link
+                        to="/students"
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer hover:shadow-md block"
+                    >
                         <h3 className="font-medium text-blue-600">Manage Students</h3>
                         <p className="text-sm text-gray-500 mt-1">Add, edit, or import students.</p>
-                    </div>
-                    <div className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                    </Link>
+                    <Link
+                        to="/academic"
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer hover:shadow-md block"
+                    >
                         <h3 className="font-medium text-green-600">Academic Structure</h3>
                         <p className="text-sm text-gray-500 mt-1">Configure fields, promotions, and TUs.</p>
-                    </div>
-                    <div className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
-                        <h3 className="font-medium text-purple-600">Generate Results</h3>
+                    </Link>
+                    <Link
+                        to="/transcripts"
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer hover:shadow-md block"
+                    >
+                        <h3 className="font-medium text-purple-600">Generate Transcripts</h3>
                         <p className="text-sm text-gray-500 mt-1">Calculate averages and print transcripts.</p>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </div>
