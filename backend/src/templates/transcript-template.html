@@ -1,164 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Academic Transcript</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Transcript</title>
     <style>
-        /* CSS will be injected here or loaded from external file */
-            {
-                {
-                    {
-                    styles
-                }
-            }
-        }
+        {{{styles}}}     
     </style>
 </head>
-
 <body>
-    <div class="header">
-        <div class="institute-name">BURKINABE INSTITUTE OF TECHNOLOGY</div>
-        <div class="document-title">ACADEMIC TRANSCRIPT</div>
-    </div>
+    <div class="transcript-container">
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-section">
+                    <img src="data:image/jpeg;base64,{{logoBase64}}" alt="BIT Logo" class="bit-logo-img">
+                    <div class="institution-info">
+                        <span class="institution-name">burkina</span>
+                        <span class="institution-name">institute of technology</span>
+                        <p class="slogan">Educating a New Generation of Leaders</p>
+                    </div>
+                </div>
+                <p class="authorization-info">
+                    Autorisation de création: N° 2018-00/01347/MESRSI/SG/DGESup/DIPES du 13 Septembre 2018<br>
+                    Autorisation d'ouverture: N° 2018-00001511/MESRSI/SG/DGESup/DIPES du 25 Septembre 2018
+                </p>
+            </div>
+            <div class="header-right">
+                <p class="country">BURKINA FASO</p>
+                <p class="motto">La Patrie ou la Mort, nous Vaincrons</p>
+                <p class="academic-year">Academic year: {{academicYear}}</p>
+            </div>
+        </header>
 
-    <div class="student-info">
-        <div class="info-column">
-            <div class="info-row">
-                <div class="info-label">Name:</div>
-                <div class="info-value">{{student.lastName}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">First Name(s):</div>
-                <div class="info-value">{{student.firstName}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Student ID:</div>
-                <div class="info-value">{{student.studentId}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Date & Place of birth:</div>
-                <div class="info-value">{{student.dateOfBirth}} at {{student.placeOfBirth}}</div>
-            </div>
-        </div>
-        <div class="info-column">
-            <div class="info-row">
-                <div class="info-label">Field:</div>
-                <div class="info-value">{{student.field}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Speciality:</div>
-                <div class="info-value">{{student.speciality}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Mention:</div>
-                <div class="info-value">{{annual.mention}}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Academic year:</div>
-                <div class="info-value">{{academicYear}}</div>
-            </div>
-        </div>
-    </div>
+        <h1 class="main-title">Grade Transcript</h1>
 
-    {{#each semesters}}
-    <div class="semester-section">
-        <div
-            style="background-color: #333; color: white; padding: 5px; font-weight: bold; text-align: center; margin-bottom: 0;">
-            {{this.name}}
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th class="col-tu">TU</th>
-                    <th class="col-tue">TUE</th>
-                    <th class="col-credits">Credits</th>
-                    <th class="col-grade">Grade/20</th>
-                    <th class="col-acquired">Acquired</th>
-                    <th class="col-validation">Validation</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each this.tus}}
-                <tr class="tu-row">
-                    <td class="col-tu">{{this.name}}</td>
-                    <td class="col-tue"></td>
-                    <td class="col-credits">{{this.totalCredits}}</td>
-                    <td class="col-grade">{{this.average}}</td>
-                    <td class="col-acquired">{{this.creditsEarned}}</td>
-                    <td class="col-validation">{{this.validationStatus}}</td>
-                </tr>
-                {{#each this.tues}}
-                <tr class="tue-row">
-                    <td class="col-tu"></td>
-                    <td class="col-tue">{{this.name}}</td>
-                    <td class="col-credits">{{this.credits}}</td>
-                    <td class="col-grade">{{this.grade}}</td>
-                    <td class="col-acquired">-</td>
-                    <td class="col-validation">-</td>
-                </tr>
-                {{/each}}
-                {{/each}}
-                <tr class="summary-row">
-                    <td colspan="2" class="summary-label">Semester average & Total credits acquired</td>
-                    <td class="col-credits">{{this.totalCredits}}</td>
-                    <td class="col-grade">{{this.average}}</td>
-                    <td class="col-acquired">{{this.creditsEarned}}</td>
-                    <td class="col-validation"></td>
-                </tr>
-                <tr class="summary-row">
-                    <td colspan="2" class="summary-label">Decision for the semester</td>
-                    <td colspan="4" style="text-align: center;">{{this.status}}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    {{/each}}
-
-    <div class="annual-summary">
-        <div class="annual-row">
-            <div class="annual-label">Annual Average:</div>
-            <div>{{annual.average}}</div>
-        </div>
-        <div class="annual-row">
-            <div class="annual-label">Annual Result:</div>
-            <div>{{annual.result}}</div>
-        </div>
-        <div class="annual-row">
-            <div class="annual-label">Rating:</div>
-            <div>{{annual.rating}}</div>
-        </div>
-        <div class="annual-row">
-            <div class="annual-label">Total credits acquired:</div>
-            <div>{{annual.totalCredits}}</div>
-        </div>
-    </div>
-
-    <div class="footer">
-        <div class="legend">
-            <strong>N.B.:</strong><br>
-            V: TU Validated; NV: TU Not Validated; V/C: TU Validated by Compensation.<br>
-            A semester is validated if and only if the semester average >= 10 and the average of each TU >= 08<br>
-            Rating according TU/semester average (Av):<br>
-            Fail: F (<10); Passable: D (10-11), D+ (11-12); Fairly Good: C (12-13), C+ (13-14); Good: B (14-15), B+
-                (15-16); Very Good: A (16-17), A+ (17-18); Excellent: A++ (>=18)
-        </div>
-
-        <div class="signatures">
-            <div class="signature-block">
-                <div>Koudougou, {{currentDate}}</div>
-                <br>
-                <div>Academic Director</div>
-                <br><br><br>
-                <div>Dr XXXXXXXXXXXXXXXX</div>
+        <!-- Personal and Academic Info -->
+        <section class="info-section">
+            <div class="info-column">
+                <p><strong>Name</strong>: {{student.lastName}}</p>
+                <p><strong>First Name (s)</strong>: {{student.firstName}}</p>
+                <p><strong>Date & Place of birth</strong>: {{student.dateOfBirth}}</p>
+                <p><strong>Student ID</strong>: {{student.studentId}}</p>
             </div>
-        </div>
+            <div class="info-column">
+                <p><strong>Licence</strong>: {{student.licence}}</p>
+                <p><strong>Field</strong>: {{student.field}}</p>
+                <p><strong>Mention</strong>: {{student.mention}}</p>
+                <p><strong>Speciality</strong>: {{student.speciality}}</p>
+            </div>
+        </section>
 
-        <div class="auth-text">
-            Autorisation de création: N° 2018-00/01347/MESRSI/SG/DGESup/DIPES du 13 Septembre 2018<br>
-            Autorisation d'ouverture: N° 2018-00001511/MESRSI/SG/DGESup/DIPES du 25 Septembre 2018
-        </div>
+        <!-- Grades Table -->
+        <section class="grades-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="section1"></th>
+                        <th rowspan="2" class="header-tu">TU</th>
+                        <th rowspan="2" class="header-tue">TUE</th>
+                        <th rowspan="2" class="header-credits">TUE Credits</th>
+                        <th colspan="4">Results</th>
+                    </tr>
+                    <tr>
+                        <th class="header-grade">Grade/20</th>
+                        <th class="header-average">TU Average</th>
+                        <th class="header-acquired">Acquired Credits</th>
+                        <th class="header-validation">TU Validation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each semesters}}
+                        {{#each this.tus}}
+                            {{#each this.tues}}
+                            <tr>
+                                {{#if this.isFirst}}
+                                    {{#if ../this.isFirst}}
+                                    <td rowspan="{{../../this.totalRows}}" class="semester-cell">
+                                        <div class="vertical-text">{{../../this.name}}</div>
+                                    </td>
+                                    {{/if}}
+                                    <td rowspan="{{../this.tueCount}}" class="tu-cell">{{../this.name}}</td>
+                                {{/if}}
+
+                                <td class="tue-cell">{{this.name}}</td>
+                                <td class="credits-cell">{{this.credits}}</td>
+                                <td class="grade-cell">{{this.grade}}</td>
+
+                                {{#if this.isFirst}}
+                                    <td rowspan="{{../this.tueCount}}" class="grade-cell">{{../this.average}}</td>
+                                    <td rowspan="{{../this.tueCount}}" class="acquired-cell">{{../this.creditsEarned}}</td>
+                                    <td rowspan="{{../this.tueCount}}" class="validation-cell">{{../this.validationStatus}}</td>
+                                {{/if}}
+                            </tr>
+                            {{/each}}
+                        {{/each}}
+
+                        <!-- Semester Summary -->
+                        <tr class="semester-summary">
+                            <td colspan="5" class="summary-label">Semester average & Total credits acquired</td>
+                            <td class="summary-values">{{this.average}}</td>
+                            <td class="summary-values">{{this.creditsEarned}}</td>
+                            <td class="summary-decision">{{this.status}}</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Annual Summary -->
+        <section class="annual-summary">
+            <div class="summary-details">
+                <p><strong>Annual Average:</strong> <span>{{annual.average}}</span></p>
+                <p><strong>Annual Result:</strong> <span class="{{#if annual.isValidated}}passed{{else}}adjourned{{/if}}">{{annual.result}}</span></p>
+                <p><strong>Rating:</strong> <span>{{annual.rating}}</span></p>
+                <p><strong>Total credits acquired:</strong> <span>{{annual.totalCredits}}</span></p>
+            </div>
+        </section>
+
+        <!-- Notes and Signatures -->
+        <section class="notes-section">
+            <div class="notes-content">
+                <p><strong>N. B. :</strong></p>
+                <p><strong>Description :</strong></p>
+                <ul>
+                    <li><span class="note-key">V</span>: TU Validated;</li>
+                    <li><span class="note-key">NV</span>: TU Not Validated;</li>
+                    <li><span class="note-key">V/C</span>: TU Validated by Compensation.</li>
+                </ul>
+                <p>A semester is validated if and only if the semester average ≥ 10 and the average of each TU ≥ 08;</p>
+                <p>Any deletion or overload causes the invalidity of this document;</p>
+                <p>Only one transcript is issued. It is up to the interested party to make certified copies.</p>
+                <p><strong>Rating according TU/semester average (Av):</strong></p>
+                <ul>
+                    <li><span class="note-key">Fail</span>: F (Av &lt; 10);</li>
+                    <li><span class="note-key">Passable</span>: D (10 ≤ Av &lt; 11), D+ (11 ≤ Av &lt; 12);</li>
+                    <li><span class="note-key">Fairly Good</span>: C (12 ≤ Av &lt; 13), C+ (13 ≤ Av &lt; 14);</li>
+                    <li><span class="note-key">Good</span>: B (14 ≤ Av &lt; 15), B+ (15 ≤ Av &lt; 16);</li>
+                    <li><span class="note-key">Very Good</span>: A (16 ≤ Av &lt; 17), A+ (17 ≤ Av &lt; 18);</li>
+                    <li><span class="note-key">Excellent</span>: A++ (Av ≥ 18)</li>
+                </ul>
+            </div>
+
+            <div class="signatures">
+                <p class="date-location">Koudougou, {{currentDate}}</p>
+                <p class="academic-director">Academic Director</p>
+                <p class="signature-line">Dr XXXXXXXXXXXXXXXX</p>
+            </div>
+        </section>
     </div>
 </body>
-
 </html>

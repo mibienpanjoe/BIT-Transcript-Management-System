@@ -82,6 +82,12 @@ exports.loadTemplates = loadTemplates;
 exports.generateTranscript = async (studentId, semesterId, academicYear, res) => {
     let page = null;
     try {
+        // Ensure templates are loaded
+        if (!compiledTemplate || !cachedStyles) {
+            console.log('Templates not cached, loading now...');
+            await loadTemplates();
+        }
+
         // 1. Fetch Data
         const student = await Student.findById(studentId)
             .populate('fieldId')
@@ -93,27 +99,41 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
             promotionId: student.promotionId._id
         }).sort({ order: 1 });
 
+        // Load Logo
+        let logoBase64 = '';
+        try {
+            const logoPath = path.join(__dirname, '../templates/logo.jpg');
+            const logoBuffer = await fs.promises.readFile(logoPath);
+            logoBase64 = logoBuffer.toString('base64');
+        } catch (err) {
+            console.warn('Logo not found or could not be loaded:', err.message);
+        }
+
         // 2. Prepare Data Structure for Template
         const templateData = {
             student: {
                 lastName: student.lastName.toUpperCase(),
                 firstName: student.firstName,
                 studentId: student.studentId,
-                dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A',
+                dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('en-GB') : 'N/A', // DD/MM/YYYY
                 placeOfBirth: student.placeOfBirth || 'N/A',
                 field: student.fieldId?.name || 'N/A',
-                speciality: student.fieldId?.name || 'N/A',
+                speciality: student.fieldId?.name || 'N/A', // Assuming speciality is same as field for now, or derive if available
+                licence: 'L3', // TODO: Derive dynamically if possible, hardcoded for now based on template
+                mention: 'Engineering Sciences' // Hardcoded based on template, or derive
             },
             academicYear,
-            currentDate: new Date().toLocaleDateString(),
+            currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
             semesters: [],
             annual: {
                 average: '-',
                 result: 'PENDING',
                 rating: '-',
                 totalCredits: 0,
-                mention: '-'
-            }
+                mention: '-',
+                isValidated: false
+            },
+            logoBase64
         };
 
         let annualTotalCredits = 0;
@@ -134,7 +154,9 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 totalCredits: semResult ? semResult.totalCredits : 0,
                 creditsEarned: (semResult && semResult.status === 'VALIDATED') ? semResult.totalCredits : 0,
                 status: semResult ? semResult.status : 'PENDING',
-                tus: []
+                isValidated: semResult ? semResult.status === 'VALIDATED' : false,
+                tus: [],
+                totalRows: 0 // For rowspan
             };
 
             const tuResults = await TUResult.find({
@@ -142,6 +164,8 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 semesterId: semester._id,
                 academicYear
             }).populate('tuId');
+
+            let semesterTotalRows = 0;
 
             for (const tuRes of tuResults) {
                 const tu = tuRes.tuId;
@@ -155,14 +179,20 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 const tues = await TUE.find({ tuId: tu._id, isActive: true });
                 const tuesData = [];
 
-                for (const tue of tues) {
+                for (let i = 0; i < tues.length; i++) {
+                    const tue = tues[i];
                     const grade = await Grade.findOne({ studentId, tueId: tue._id, academicYear });
                     tuesData.push({
                         name: tue.name,
                         credits: tue.credits,
-                        grade: grade ? grade.finalGrade.toFixed(2) : '-'
+                        grade: grade ? grade.finalGrade.toFixed(2) : '-',
+                        isFirst: i === 0
                     });
                 }
+
+                // If no TUEs, we still need one row to display the TU
+                const tueCount = tuesData.length > 0 ? tuesData.length : 1;
+                semesterTotalRows += tueCount;
 
                 semesterData.tus.push({
                     name: tu.name,
@@ -170,9 +200,19 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                     average: tuRes.average.toFixed(2),
                     creditsEarned: tuRes.creditsEarned,
                     validationStatus: tuRes.status,
-                    tues: tuesData
+                    tues: tuesData,
+                    tueCount: tueCount,
+                    isFirst: semesterData.tus.length === 0 // Check if this is the first TU in the list so far
                 });
             }
+
+            // Add 2 for summary rows (Average/Credits row + Decision row)
+            // But wait, the semester name rowspan only covers the content rows, not summary rows usually?
+            // Looking at the template: 
+            // The semester cell rowspan covers all TU/TUE rows.
+            // The summary rows are separate <tr>s at the bottom.
+            // So totalRows should be just the sum of tueCounts.
+            semesterData.totalRows = semesterTotalRows;
 
             templateData.semesters.push(semesterData);
 
@@ -191,7 +231,7 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
 
         const annualResult = (bothSemestersCompleted && allSemestersValidated && meetsMinimumCredits)
             ? 'VALIDATED'
-            : 'NOT VALIDATED';
+            : 'ADJOURNED'; // Changed from NOT VALIDATED to match template style
 
         let rating = '-';
         if (annualAvg !== '-') {
@@ -213,58 +253,70 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
             result: annualResult,
             rating: rating,
             totalCredits: annualTotalCredits,
-            mention: rating
+            mention: rating,
+            isValidated: annualResult === 'VALIDATED'
         };
 
-        // 3. Render HTML
-        if (!compiledTemplate || !cachedStyles) {
-            throw new Error('Templates not loaded. Server may not have initialized properly.');
-        }
+// ... (keep all your existing code until the HTML rendering section)
 
-        // Inject CSS directly into HTML to avoid Handlebars issues
-        const htmlContent = compiledTemplate({
-            ...templateData,
-            styles: '' // Don't inject here
-        });
+// 3. Render HTML - FIXED VERSION
+if (!compiledTemplate || !cachedStyles) {
+    throw new Error('Templates not loaded. Server may not have initialized properly.');
+}
 
-        // Manual injection is safer
-        const html = htmlContent.replace('{{{styles}}}', cachedStyles);
+// Pass styles directly into the template via {{{styles}}}
+const html = compiledTemplate({
+    ...templateData,
+    styles: cachedStyles  // ADD THIS - inject CSS into template
+});
 
-        // DEBUG: Save HTML to disk
-        try {
-            fs.writeFileSync('debug_last_transcript.html', html);
-            console.log('[PDF Debug] Saved debug_last_transcript.html');
-        } catch (e) { console.error('Failed to save debug HTML:', e); }
+// DEBUG: Save HTML to disk
+try {
+    fs.writeFileSync('debug_last_transcript.html', html);
+    console.log('[PDF Debug] Saved debug_last_transcript.html');
+} catch (e) { 
+    console.error('Failed to save debug HTML:', e); 
+}
 
-        // 4. Generate PDF with timeout protection
-        const browserInstance = await initBrowser();
+// 4. Generate PDF with timeout protection
+const browserInstance = await initBrowser();
 
-        page = await withTimeout(
-            browserInstance.newPage(),
-            5000,
-            'Page creation timeout (5s)'
-        );
+page = await withTimeout(
+    browserInstance.newPage(),
+    5000,
+    'Page creation timeout (5s)'
+);
 
-        await withTimeout(
-            page.setContent(html, { waitUntil: 'load' }),
-            10000,
-            'Content loading timeout (10s)'
-        );
+// Set content with proper wait
+await withTimeout(
+    page.setContent(html, { 
+        waitUntil: 'networkidle0',  // Changed from 'load' to 'networkidle0'
+        timeout: 10000 
+    }),
+    12000,
+    'Content loading timeout (12s)'
+);
 
-        const pdfBuffer = await withTimeout(
-            page.pdf({
-                format: 'A4',
-                printBackground: true,
-                margin: {
-                    top: '1cm',
-                    bottom: '1cm',
-                    left: '1cm',
-                    right: '1cm'
-                }
-            }),
-            15000,
-            'PDF generation timeout (15s)'
-        );
+// REMOVED: page.addStyleTag() - No longer needed since CSS is in <style> tag
+
+// Optional: Wait for fonts to load
+await page.evaluateHandle('document.fonts.ready');
+
+const pdfBuffer = await withTimeout(
+    page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+            top: '0.5cm',
+            bottom: '0.5cm',
+            left: '0.5cm',
+            right: '0.5cm'
+        },
+        preferCSSPageSize: false  // ADD THIS - use our format instead of CSS @page
+    }),
+    15000,
+    'PDF generation timeout (15s)'
+);
 
         // DEBUG: Save PDF to disk
         try {
