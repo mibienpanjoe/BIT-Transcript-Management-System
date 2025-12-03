@@ -53,4 +53,11 @@ const StudentSchema = new mongoose.Schema({
     },
 });
 
+StudentSchema.virtual('registrationNumber').get(function () {
+    return this.studentId;
+});
+
+StudentSchema.set('toJSON', { virtuals: true });
+StudentSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('Student', StudentSchema);
