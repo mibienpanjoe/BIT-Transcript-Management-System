@@ -1,0 +1,21 @@
+# Dockerfile for BIT TMS frontend (Vite dev server)
+# -------------------------------------------------
+# Uses Node 20 (alpine) – lightweight but full Node runtime
+# -------------------------------------------------
+FROM node:20-alpine AS dev
+
+# Set working directory inside container
+WORKDIR /app
+
+# Install dependencies – copy only package files first for layer caching
+COPY package*.json ./
+RUN npm ci
+
+# Copy the rest of the source code (will be overridden by a bind‑mount in dev)
+COPY . .
+
+# Expose Vite's default dev‑server port
+EXPOSE 5173
+
+# Run Vite dev server and listen on all interfaces
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

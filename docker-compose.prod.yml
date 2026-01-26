@@ -1,0 +1,57 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bit-tms-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=/api
+    # No volumes for source code in production
+
+  mongo:
+    image: mongo:7.0
+    container_name: bit-tms-mongo-prod
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data-prod:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=bit-tms
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      # Defaults to runner stage
+    container_name: bit-tms-backend-prod
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/bit-tms
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRE=24h
+      - PORT=5000
+      - FRONTEND_URL=http://localhost
+    # No volumes for source code in production
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+
+volumes:
+  mongo-data-prod:
+    name: bit-tms-mongo-data-prod
