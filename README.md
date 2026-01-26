@@ -39,6 +39,13 @@ Backend runs on `http://localhost:5000` and frontend on `http://localhost:5173`.
 docker compose up --build
 ```
 
+## API Docs (Swagger)
+
+Once the backend is running:
+
+- `http://localhost:5000/api/docs`
+- `http://localhost:5000/api/docs.json`
+
 ## Documentation
 
 Start here: `docs/README.md`.
@@ -49,6 +56,14 @@ Scripts live under `backend/scripts/`. For example:
 
 ```bash
 node backend/scripts/createAdmin.js
+```
+
+## Seeding Demo Data
+
+Populate the database with sample data:
+
+```bash
+node backend/scripts/seed.js
 ```
 
 See `docs/developer/` for details.
