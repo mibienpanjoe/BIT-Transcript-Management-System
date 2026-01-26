@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/database');
 const logger = require('./config/logger');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -50,6 +52,10 @@ app.use('/api/grades', gradeRoutes);
 app.use('/api/calculations', calculationRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/transcripts', transcriptRoutes);
+
+// Swagger docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api/docs.json', (req, res) => res.json(swaggerSpec));
 
 // Basic route
 app.get('/', (req, res) => {
