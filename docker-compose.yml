@@ -12,6 +12,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules # Prevent host node_modules from overriding container's
+    command: node node_modules/vite/bin/vite.js --host 0.0.0.0
 
   mongo:
     image: mongo:7.0
@@ -54,7 +55,7 @@ services:
       - /app/node_modules # Prevent host node_modules from overriding container's
     env_file:
       - ./backend/.env
-    command: npm run dev
+    command: node node_modules/nodemon/bin/nodemon.js src/server.js
 
 volumes:
   mongo-data:

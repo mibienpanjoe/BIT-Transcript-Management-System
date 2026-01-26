@@ -86,7 +86,7 @@ If you don't enter a participation grade, the system uses 10/20 as the default.
 ```
 Final Grade = (Presence × 5%) + (Participation × 5%) + (Evaluations × 90%)
 ```
-See [Calculation Logic](./developer-docs/calculation-logic.md) for details.
+See [Calculation Logic](./developer/calculation-logic.md) for details.
 
 ### Can I import grades from Excel?
 Yes! Download the template, fill it in, and upload. See [Teacher Guide](./user-guides/teacher-guide.md#importing-grades-from-excel).

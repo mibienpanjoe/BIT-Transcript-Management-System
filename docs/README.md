@@ -11,14 +11,10 @@ Welcome to the BIT Transcript Management System documentation! This directory co
 - **[Quick Start Guide](./quick-start-guide.md)** - Get started quickly with BIT TMS
 
 ### For Developers
-- **[Database Schema](./developer-docs/database-schema.md)** - Complete database structure documentation
-- **[API Documentation](./developer-docs/api-documentation.md)** - All API endpoints and usage
-- **[Calculation Logic](./developer-docs/calculation-logic.md)** - Grade and validation calculations
-- **[Deployment Guide](./developer-docs/deployment-guide.md)** - How to deploy the system
-- **[Backend README](./developer-docs/backend-readme.md)** - Backend setup and development
-- **[Frontend README](./developer-docs/frontend-readme.md)** - Frontend setup and development
-- **[Environment Variables](./developer-docs/environment-variables.md)** - Configuration guide
-- **[Code Documentation Guidelines](./developer-docs/code-documentation-guidelines.md)** - Coding standards
+- **[Database Schema](./developer/database-schema.md)** - Complete database structure documentation
+- **[Calculation Logic](./developer/calculation-logic.md)** - Grade and validation calculations
+- **[Deployment Guide](./developer/deployment-guide.md)** - How to deploy the system
+- **[Environment Variables](./developer/environment-variables.md)** - Configuration guide
 
 ### Additional Resources
 - **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
@@ -32,8 +28,8 @@ Welcome to the BIT Transcript Management System documentation! This directory co
 - **Enter grades** → [Teacher Guide - Grade Entry](./user-guides/teacher-guide.md#entering-grades)
 - **Record attendance** → [Schooling Manager Guide](./user-guides/schooling-manager-guide.md)
 - **Generate transcripts** → [Admin Guide - Transcript Generation](./user-guides/admin-guide.md#transcript-generation)
-- **Understand the API** → [API Documentation](./developer-docs/api-documentation.md)
-- **Deploy the system** → [Deployment Guide](./developer-docs/deployment-guide.md)
+- **Understand the data model** → [Database Schema](./developer/database-schema.md)
+- **Deploy the system** → [Deployment Guide](./developer/deployment-guide.md)
 
 ## 📖 About BIT TMS
 

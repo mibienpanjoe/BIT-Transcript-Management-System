@@ -176,7 +176,7 @@ bit-tms/
 │   │   └── utils/           # Utilities
 │   ├── App.jsx
 │   └── package.json
-└── documentation/           # This folder!
+└── docs/                    # This folder!
 ```
 
 ### Common Development Tasks
@@ -230,10 +230,10 @@ npm run build
 
 ### For Developers
 
-- Review [Database Schema](./developer-docs/database-schema.md)
-- Understand [Calculation Logic](./developer-docs/calculation-logic.md)
-- Check [API Documentation](./developer-docs/api-documentation.md)
-- Read [Deployment Guide](./developer-docs/deployment-guide.md)
+- Review [Database Schema](./developer/database-schema.md)
+- Understand [Calculation Logic](./developer/calculation-logic.md)
+- Check [Environment Variables](./developer/environment-variables.md)
+- Read [Deployment Guide](./developer/deployment-guide.md)
 
 ---
 

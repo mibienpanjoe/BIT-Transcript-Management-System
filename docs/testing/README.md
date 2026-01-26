@@ -12,7 +12,7 @@ This directory contains comprehensive testing resources for the BIT Transcript M
 ## Directory Structure
 
 ```
-testing/
+docs/testing/
 ├── README.md                           # This file
 ├── TESTING-GUIDE.md                    # Comprehensive testing guide
 └── sample-data/                        # Sample data files
@@ -181,19 +181,19 @@ After completing all testing phases, you should have:
 If you encounter issues:
 
 1. **Check the troubleshooting section** in TESTING-GUIDE.md
-2. **Review the user guides** in `documentation/user-guides/`
+2. **Review the user guides** in `../user-guides/`
 3. **Check console logs** (browser and backend)
 4. **Verify data integrity** (relationships, required fields)
-5. **Review walkthrough.md** for system architecture
+5. **Review walkthrough.md** for system architecture (`../architecture/walkthrough.md`)
 
 ## Additional Resources
 
-- **User Guides**: `documentation/user-guides/`
+- **User Guides**: `../user-guides/`
   - admin-guide.md
   - teacher-guide.md
   - schooling-manager-guide.md
-- **Walkthrough**: `walkthrough.md`
-- **Developer Docs**: `documentation/developer/`
+- **Walkthrough**: `../architecture/walkthrough.md`
+- **Developer Docs**: `../developer/`
 
 ## Feedback
 
