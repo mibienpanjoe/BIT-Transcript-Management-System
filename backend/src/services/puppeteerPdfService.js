@@ -6,7 +6,7 @@ const Student = require('../models/Student');
 const Semester = require('../models/Semester');
 const SemesterResult = require('../models/SemesterResult');
 const TUResult = require('../models/TUResult');
-const TU = require('../models/TU');
+//const TU = require('../models/TU');
 const TUE = require('../models/TUE');
 const Grade = require('../models/Grade');
 

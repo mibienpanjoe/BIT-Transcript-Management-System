@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: bit-tms-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: bit-tms-dev
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bit-tms-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/bit-tms-dev
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRE: 24h
+      PORT: 5000
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    env_file:
+      - ./backend/.env
+
+volumes:
+  mongo-data:
+    name: bit-tms-mongo-data
