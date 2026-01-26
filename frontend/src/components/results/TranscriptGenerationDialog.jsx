@@ -9,6 +9,7 @@ const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) 
     const [validation, setValidation] = useState(null);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(null);
+    const [language, setLanguage] = useState('en');
 
     const validateReadiness = useCallback(async () => {
         setLoading(true);
@@ -32,6 +33,7 @@ const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) 
 
     useEffect(() => {
         if (isOpen && student) {
+            setLanguage('en');
             validateReadiness();
         }
     }, [isOpen, student, validateReadiness]);
@@ -42,7 +44,8 @@ const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) 
             const response = await api.get(`/transcripts/student/${student._id}/pdf`, {
                 params: {
                     academicYear,
-                    level: student?.promotionId?.level || 'L1'
+                    level: student?.promotionId?.level || 'L1',
+                    lang: language
                 },
                 responseType: 'blob'
             });
@@ -172,6 +175,19 @@ const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) 
                                 )}
                             </div>
                         ) : null}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+                        <span className="text-sm font-medium text-gray-700">Transcript language</span>
+                        <select
+                            value={language}
+                            onChange={(event) => setLanguage(event.target.value)}
+                            disabled={generating}
+                            className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                        </select>
                     </div>
 
                     <div className="mt-8 flex justify-end space-x-3 border-t pt-4">

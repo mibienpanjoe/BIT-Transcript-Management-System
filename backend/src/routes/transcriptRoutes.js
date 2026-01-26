@@ -60,6 +60,15 @@ const router = express.Router();
  *         name: studentId
  *         required: true
  *         schema: { type: string }
+ *       - in: query
+ *         name: academicYear
+ *         schema: { type: string }
+ *       - in: query
+ *         name: level
+ *         schema: { type: string, enum: [L1, L2, L3, M1, M2] }
+ *       - in: query
+ *         name: lang
+ *         schema: { type: string, enum: [en, fr] }
  *     responses:
  *       200:
  *         description: PDF stream
@@ -79,6 +88,15 @@ const router = express.Router();
  *         name: studentId
  *         required: true
  *         schema: { type: string }
+ *       - in: query
+ *         name: academicYear
+ *         schema: { type: string }
+ *       - in: query
+ *         name: level
+ *         schema: { type: string, enum: [L1, L2, L3, M1, M2] }
+ *       - in: query
+ *         name: lang
+ *         schema: { type: string, enum: [en, fr] }
  *     responses:
  *       200:
  *         description: PDF stream

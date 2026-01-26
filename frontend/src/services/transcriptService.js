@@ -4,12 +4,13 @@ export const getTranscriptData = (studentId) => {
     return api.get(`/transcripts/student/${studentId}`);
 };
 
-export const generateTranscriptPDF = (studentId, semesterId = null) => {
+export const generateTranscriptPDF = (studentId, semesterId = null, lang = 'en') => {
     const url = semesterId
         ? `/transcripts/semester/${semesterId}/student/${studentId}/pdf`
         : `/transcripts/student/${studentId}/pdf`;
 
     return api.get(url, {
+        params: { lang },
         responseType: 'blob',
         headers: {
             'Accept': 'application/pdf'

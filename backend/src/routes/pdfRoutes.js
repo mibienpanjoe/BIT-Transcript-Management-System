@@ -20,6 +20,13 @@ const router = express.Router();
  *       - in: query
  *         name: semesterId
  *         schema: { type: string }
+ *       - in: query
+ *         name: academicYear
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: lang
+ *         schema: { type: string, enum: [en, fr] }
  *     responses:
  *       200:
  *         description: PDF stream

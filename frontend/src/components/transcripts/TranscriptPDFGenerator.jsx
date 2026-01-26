@@ -4,13 +4,13 @@ import Button from '../common/Button';
 import { FaFilePdf, FaDownload } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-const TranscriptPDFGenerator = ({ studentId, semesterId, studentName, type = 'full' }) => {
+const TranscriptPDFGenerator = ({ studentId, semesterId, studentName, type = 'full', language = 'en' }) => {
     const [generating, setGenerating] = useState(false);
 
     const handleGenerate = async () => {
         try {
             setGenerating(true);
-            const blob = await generateTranscriptPDF(studentId, semesterId);
+            const blob = await generateTranscriptPDF(studentId, semesterId, language);
 
             // Create download link
             const url = window.URL.createObjectURL(blob);

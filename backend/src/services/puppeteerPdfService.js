@@ -79,9 +79,100 @@ exports.initBrowser = initBrowser;
 exports.closeBrowser = closeBrowser;
 exports.loadTemplates = loadTemplates;
 
-exports.generateTranscript = async (studentId, semesterId, academicYear, res) => {
+const getI18n = (lang) => {
+    const isFr = lang === 'fr';
+    return {
+        title: isFr ? 'Releve de Notes' : 'Grade Transcript',
+        academicYear: isFr ? 'Annee academique' : 'Academic year',
+        name: isFr ? 'Nom' : 'Name',
+        firstName: isFr ? 'Prenom(s)' : 'First Name(s)',
+        dateAndPlace: isFr ? 'Date & lieu de naissance' : 'Date & Place of birth',
+        studentId: isFr ? 'Matricule' : 'Student ID',
+        licence: isFr ? 'Licence' : 'Licence',
+        field: isFr ? 'Filiere' : 'Field',
+        mention: isFr ? 'Mention' : 'Mention',
+        speciality: isFr ? 'Specialite' : 'Speciality',
+        results: isFr ? 'Resultats' : 'Results',
+        grade: isFr ? 'Note/20' : 'Grade/20',
+        tuAverage: isFr ? 'Moyenne TU' : 'TU Average',
+        acquiredCredits: isFr ? 'Credits acquis' : 'Acquired Credits',
+        tuValidation: isFr ? 'Validation TU' : 'TU Validation',
+        tueCredits: isFr ? 'Credits TUE' : 'TUE Credits',
+        semesterSummary: isFr ? 'Moyenne du semestre & Total des credits acquis' : 'Semester average & Total credits acquired',
+        annualAverage: isFr ? 'Moyenne annuelle' : 'Annual Average',
+        annualResult: isFr ? 'Resultat annuel' : 'Annual Result',
+        rating: isFr ? 'Mention' : 'Rating',
+        totalCredits: isFr ? 'Total des credits acquis' : 'Total credits acquired',
+        notesTitle: 'N. B.',
+        description: isFr ? 'Description' : 'Description',
+        noteV: isFr ? 'V: TU Validee;' : 'V: TU Validated;',
+        noteNV: isFr ? 'NV: TU Non Validee;' : 'NV: TU Not Validated;',
+        noteVC: isFr ? 'V/C: TU Validee par Compensation.' : 'V/C: TU Validated by Compensation.',
+        semesterRule: isFr
+            ? 'Un semestre est valide si et seulement si la moyenne du semestre ≥ 10 et la moyenne de chaque TU ≥ 08;'
+            : 'A semester is validated if and only if the semester average ≥ 10 and the average of each TU ≥ 08;',
+        invalidNotice: isFr
+            ? 'Toute suppression ou surcharge entraine la nullite de ce document;'
+            : 'Any deletion or overload causes the invalidity of this document;',
+        copiesNotice: isFr
+            ? "Un seul releve est delivre. Il appartient a l'interesse de faire des copies certifiees conformes."
+            : 'Only one transcript is issued. It is up to the interested party to make certified copies.',
+        ratingScaleTitle: isFr
+            ? 'Mention selon la moyenne TU/semestre (Av):'
+            : 'Rating according TU/semester average (Av):',
+        ratingFail: isFr ? 'Echec: F (Av < 10);' : 'Fail: F (Av < 10);',
+        ratingPassable: isFr
+            ? 'Passable: D (10 ≤ Av < 11), D+ (11 ≤ Av < 12);'
+            : 'Passable: D (10 ≤ Av < 11), D+ (11 ≤ Av < 12);',
+        ratingFairlyGood: isFr
+            ? 'Assez bien: C (12 ≤ Av < 13), C+ (13 ≤ Av < 14);'
+            : 'Fairly Good: C (12 ≤ Av < 13), C+ (13 ≤ Av < 14);',
+        ratingGood: isFr
+            ? 'Bien: B (14 ≤ Av < 15), B+ (15 ≤ Av < 16);'
+            : 'Good: B (14 ≤ Av < 15), B+ (15 ≤ Av < 16);',
+        ratingVeryGood: isFr
+            ? 'Tres bien: A (16 ≤ Av < 17), A+ (17 ≤ Av < 18);'
+            : 'Very Good: A (16 ≤ Av < 17), A+ (17 ≤ Av < 18);',
+        ratingExcellent: isFr ? 'Excellent: A++ (Av ≥ 18)' : 'Excellent: A++ (Av ≥ 18)',
+        academicDirector: isFr ? 'Directeur Academique' : 'Academic Director',
+        defaultMention: isFr ? "Sciences de l'ingenieur" : 'Engineering Sciences',
+        validated: isFr ? 'VALIDE' : 'VALIDATED',
+        notValidated: isFr ? 'NON VALIDE' : 'NOT VALIDATED',
+        adjourned: isFr ? 'AJOURNE' : 'ADJOURNED',
+        pending: isFr ? 'EN ATTENTE' : 'PENDING'
+    };
+};
+
+const translateStatus = (status, i18n) => {
+    if (status === 'VALIDATED') return i18n.validated;
+    if (status === 'NOT VALIDATED') return i18n.notValidated;
+    if (status === 'ADJOURNED') return i18n.adjourned;
+    if (status === 'PENDING') return i18n.pending;
+    return status;
+};
+
+const getRatingLabel = (average, i18n, lang) => {
+    if (average === '-') return '-';
+    const avg = parseFloat(average);
+    const isFr = lang === 'fr';
+    if (avg >= 18) return isFr ? 'Excellent (A++)' : 'Excellent (A++)';
+    if (avg >= 17) return isFr ? 'Tres bien (A+)' : 'Very Good (A+)';
+    if (avg >= 16) return isFr ? 'Tres bien (A)' : 'Very Good (A)';
+    if (avg >= 15) return isFr ? 'Bien (B+)' : 'Good (B+)';
+    if (avg >= 14) return isFr ? 'Bien (B)' : 'Good (B)';
+    if (avg >= 13) return isFr ? 'Assez bien (C+)' : 'Fairly Good (C+)';
+    if (avg >= 12) return isFr ? 'Assez bien (C)' : 'Fairly Good (C)';
+    if (avg >= 11) return isFr ? 'Passable (D+)' : 'Passable (D+)';
+    if (avg >= 10) return isFr ? 'Passable (D)' : 'Passable (D)';
+    return isFr ? 'Echec (F)' : 'Fail (F)';
+};
+
+exports.generateTranscript = async (studentId, semesterId, academicYear, res, lang = 'en') => {
     let page = null;
     try {
+        const locale = lang === 'fr' ? 'fr-FR' : 'en-GB';
+        const currentDateLocale = lang === 'fr' ? 'fr-FR' : 'en-US';
+        const i18n = getI18n(lang);
         // Ensure templates are loaded
         if (!compiledTemplate || !cachedStyles) {
             console.log('Templates not cached, loading now...');
@@ -115,15 +206,15 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 lastName: student.lastName.toUpperCase(),
                 firstName: student.firstName,
                 studentId: student.studentId,
-                dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('en-GB') : 'N/A', // DD/MM/YYYY
+                dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString(locale) : 'N/A',
                 placeOfBirth: student.placeOfBirth || 'N/A',
                 field: student.fieldId?.name || 'N/A',
                 speciality: student.fieldId?.name || 'N/A', // Assuming speciality is same as field for now, or derive if available
-                licence: 'L3', // TODO: Derive dynamically if possible, hardcoded for now based on template
-                mention: 'Engineering Sciences' // Hardcoded based on template, or derive
+                licence: student.promotionId?.level || 'L3',
+                mention: i18n.defaultMention
             },
             academicYear,
-            currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            currentDate: new Date().toLocaleDateString(currentDateLocale, { year: 'numeric', month: 'long', day: 'numeric' }),
             semesters: [],
             annual: {
                 average: '-',
@@ -133,7 +224,8 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 mention: '-',
                 isValidated: false
             },
-            logoBase64
+            logoBase64,
+            i18n
         };
 
         let annualTotalCredits = 0;
@@ -153,7 +245,7 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
                 average: semResult ? semResult.average.toFixed(2) : '-',
                 totalCredits: semResult ? semResult.totalCredits : 0,
                 creditsEarned: (semResult && semResult.status === 'VALIDATED') ? semResult.totalCredits : 0,
-                status: semResult ? semResult.status : 'PENDING',
+                status: semResult ? translateStatus(semResult.status, i18n) : i18n.pending,
                 isValidated: semResult ? semResult.status === 'VALIDATED' : false,
                 tus: [],
                 totalRows: 0 // For rowspan
@@ -231,26 +323,13 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res) =>
 
         const annualResult = (bothSemestersCompleted && allSemestersValidated && meetsMinimumCredits)
             ? 'VALIDATED'
-            : 'ADJOURNED'; // Changed from NOT VALIDATED to match template style
+            : 'ADJOURNED';
 
-        let rating = '-';
-        if (annualAvg !== '-') {
-            const avg = parseFloat(annualAvg);
-            if (avg >= 18) rating = 'Excellent (A++)';
-            else if (avg >= 17) rating = 'Very Good (A+)';
-            else if (avg >= 16) rating = 'Very Good (A)';
-            else if (avg >= 15) rating = 'Good (B+)';
-            else if (avg >= 14) rating = 'Good (B)';
-            else if (avg >= 13) rating = 'Fairly Good (C+)';
-            else if (avg >= 12) rating = 'Fairly Good (C)';
-            else if (avg >= 11) rating = 'Passable (D+)';
-            else if (avg >= 10) rating = 'Passable (D)';
-            else rating = 'Fail (F)';
-        }
+        const rating = getRatingLabel(annualAvg, i18n, lang);
 
         templateData.annual = {
             average: annualAvg,
-            result: annualResult,
+            result: translateStatus(annualResult, i18n),
             rating: rating,
             totalCredits: annualTotalCredits,
             mention: rating,

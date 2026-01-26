@@ -5,7 +5,7 @@ const pdfService = require('../services/puppeteerPdfService');
 // @access  Private/Admin
 exports.getTranscript = async (req, res) => {
     try {
-        const { studentId, semesterId, academicYear } = req.query;
+        const { studentId, semesterId, academicYear, lang } = req.query;
 
         // SemesterId is optional for annual transcript
         if (!studentId || !academicYear) {
@@ -21,7 +21,7 @@ exports.getTranscript = async (req, res) => {
 
         // res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
-        await pdfService.generateTranscript(studentId, semesterId, academicYear, res);
+        await pdfService.generateTranscript(studentId, semesterId, academicYear, res, lang);
     } catch (err) {
         // If headers already sent (stream started), we can't send JSON error
         if (res.headersSent) {

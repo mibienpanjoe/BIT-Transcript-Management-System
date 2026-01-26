@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Transcript</title>
+    <title>{{i18n.title}}</title>
     <style>
         {{{styles}}}     
     </style>
@@ -28,25 +28,25 @@
             <div class="header-right">
                 <p class="country">BURKINA FASO</p>
                 <p class="motto">La Patrie ou la Mort, nous Vaincrons</p>
-                <p class="academic-year">Academic year: {{academicYear}}</p>
+                <p class="academic-year">{{i18n.academicYear}}: {{academicYear}}</p>
             </div>
         </header>
 
-        <h1 class="main-title">Grade Transcript</h1>
+        <h1 class="main-title">{{i18n.title}}</h1>
 
         <!-- Personal and Academic Info -->
         <section class="info-section">
             <div class="info-column">
-                <p><strong>Name</strong>: {{student.lastName}}</p>
-                <p><strong>First Name (s)</strong>: {{student.firstName}}</p>
-                <p><strong>Date & Place of birth</strong>: {{student.dateOfBirth}}</p>
-                <p><strong>Student ID</strong>: {{student.studentId}}</p>
+                <p><strong>{{i18n.name}}</strong>: {{student.lastName}}</p>
+                <p><strong>{{i18n.firstName}}</strong>: {{student.firstName}}</p>
+                <p><strong>{{i18n.dateAndPlace}}</strong>: {{student.dateOfBirth}}</p>
+                <p><strong>{{i18n.studentId}}</strong>: {{student.studentId}}</p>
             </div>
             <div class="info-column">
-                <p><strong>Licence</strong>: {{student.licence}}</p>
-                <p><strong>Field</strong>: {{student.field}}</p>
-                <p><strong>Mention</strong>: {{student.mention}}</p>
-                <p><strong>Speciality</strong>: {{student.speciality}}</p>
+                <p><strong>{{i18n.licence}}</strong>: {{student.licence}}</p>
+                <p><strong>{{i18n.field}}</strong>: {{student.field}}</p>
+                <p><strong>{{i18n.mention}}</strong>: {{student.mention}}</p>
+                <p><strong>{{i18n.speciality}}</strong>: {{student.speciality}}</p>
             </div>
         </section>
 
@@ -58,14 +58,14 @@
                         <th rowspan="2" class="section1"></th>
                         <th rowspan="2" class="header-tu">TU</th>
                         <th rowspan="2" class="header-tue">TUE</th>
-                        <th rowspan="2" class="header-credits">TUE Credits</th>
-                        <th colspan="4">Results</th>
+                        <th rowspan="2" class="header-credits">{{i18n.tueCredits}}</th>
+                        <th colspan="4">{{i18n.results}}</th>
                     </tr>
                     <tr>
-                        <th class="header-grade">Grade/20</th>
-                        <th class="header-average">TU Average</th>
-                        <th class="header-acquired">Acquired Credits</th>
-                        <th class="header-validation">TU Validation</th>
+                        <th class="header-grade">{{i18n.grade}}</th>
+                        <th class="header-average">{{i18n.tuAverage}}</th>
+                        <th class="header-acquired">{{i18n.acquiredCredits}}</th>
+                        <th class="header-validation">{{i18n.tuValidation}}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,7 +97,7 @@
 
                         <!-- Semester Summary -->
                         <tr class="semester-summary">
-                            <td colspan="5" class="summary-label">Semester average & Total credits acquired</td>
+                            <td colspan="5" class="summary-label">{{i18n.semesterSummary}}</td>
                             <td class="summary-values">{{this.average}}</td>
                             <td class="summary-values">{{this.creditsEarned}}</td>
                             <td class="summary-decision">{{this.status}}</td>
@@ -110,40 +110,40 @@
         <!-- Annual Summary -->
         <section class="annual-summary">
             <div class="summary-details">
-                <p><strong>Annual Average:</strong> <span>{{annual.average}}</span></p>
-                <p><strong>Annual Result:</strong> <span class="{{#if annual.isValidated}}passed{{else}}adjourned{{/if}}">{{annual.result}}</span></p>
-                <p><strong>Rating:</strong> <span>{{annual.rating}}</span></p>
-                <p><strong>Total credits acquired:</strong> <span>{{annual.totalCredits}}</span></p>
+                <p><strong>{{i18n.annualAverage}}:</strong> <span>{{annual.average}}</span></p>
+                <p><strong>{{i18n.annualResult}}:</strong> <span class="{{#if annual.isValidated}}passed{{else}}adjourned{{/if}}">{{annual.result}}</span></p>
+                <p><strong>{{i18n.rating}}:</strong> <span>{{annual.rating}}</span></p>
+                <p><strong>{{i18n.totalCredits}}:</strong> <span>{{annual.totalCredits}}</span></p>
             </div>
         </section>
 
         <!-- Notes and Signatures -->
         <section class="notes-section">
             <div class="notes-content">
-                <p><strong>N. B. :</strong></p>
-                <p><strong>Description :</strong></p>
+                <p><strong>{{i18n.notesTitle}} :</strong></p>
+                <p><strong>{{i18n.description}} :</strong></p>
                 <ul>
-                    <li><span class="note-key">V</span>: TU Validated;</li>
-                    <li><span class="note-key">NV</span>: TU Not Validated;</li>
-                    <li><span class="note-key">V/C</span>: TU Validated by Compensation.</li>
+                    <li>{{i18n.noteV}}</li>
+                    <li>{{i18n.noteNV}}</li>
+                    <li>{{i18n.noteVC}}</li>
                 </ul>
-                <p>A semester is validated if and only if the semester average ≥ 10 and the average of each TU ≥ 08;</p>
-                <p>Any deletion or overload causes the invalidity of this document;</p>
-                <p>Only one transcript is issued. It is up to the interested party to make certified copies.</p>
-                <p><strong>Rating according TU/semester average (Av):</strong></p>
+                <p>{{i18n.semesterRule}}</p>
+                <p>{{i18n.invalidNotice}}</p>
+                <p>{{i18n.copiesNotice}}</p>
+                <p><strong>{{i18n.ratingScaleTitle}}</strong></p>
                 <ul>
-                    <li><span class="note-key">Fail</span>: F (Av &lt; 10);</li>
-                    <li><span class="note-key">Passable</span>: D (10 ≤ Av &lt; 11), D+ (11 ≤ Av &lt; 12);</li>
-                    <li><span class="note-key">Fairly Good</span>: C (12 ≤ Av &lt; 13), C+ (13 ≤ Av &lt; 14);</li>
-                    <li><span class="note-key">Good</span>: B (14 ≤ Av &lt; 15), B+ (15 ≤ Av &lt; 16);</li>
-                    <li><span class="note-key">Very Good</span>: A (16 ≤ Av &lt; 17), A+ (17 ≤ Av &lt; 18);</li>
-                    <li><span class="note-key">Excellent</span>: A++ (Av ≥ 18)</li>
+                    <li><span class="note-key">{{i18n.ratingFail}}</span></li>
+                    <li><span class="note-key">{{i18n.ratingPassable}}</span></li>
+                    <li><span class="note-key">{{i18n.ratingFairlyGood}}</span></li>
+                    <li><span class="note-key">{{i18n.ratingGood}}</span></li>
+                    <li><span class="note-key">{{i18n.ratingVeryGood}}</span></li>
+                    <li><span class="note-key">{{i18n.ratingExcellent}}</span></li>
                 </ul>
             </div>
 
             <div class="signatures">
                 <p class="date-location">Koudougou, {{currentDate}}</p>
-                <p class="academic-director">Academic Director</p>
+                <p class="academic-director">{{i18n.academicDirector}}</p>
                 <p class="signature-line">Dr XXXXXXXXXXXXXXXX</p>
             </div>
         </section>

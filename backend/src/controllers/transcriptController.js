@@ -11,6 +11,7 @@ exports.getStudentTranscript = async (req, res) => {
     try {
         const { studentId } = req.params;
         const academicYear = req.query.academicYear || new Date().getFullYear().toString();
+        const { lang } = req.query;
 
         const student = await Student.findById(studentId)
             .populate('fieldId')
@@ -96,7 +97,7 @@ exports.generateTranscriptPDF = async (req, res) => {
         // const filename = `transcript_${studentId}.pdf`;
         // res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
-        await pdfService.generateTranscript(studentId, semesterId, academicYear, res);
+        await pdfService.generateTranscript(studentId, semesterId, academicYear, res, lang);
 
     } catch (err) {
         if (!res.headersSent) {
@@ -176,6 +177,7 @@ exports.generateTranscriptPDF = async (req, res) => {
         const { studentId } = req.params;
         const { semesterId } = req.params; // Optional if route is /semester/:semesterId/student/:studentId/pdf
         const academicYear = req.query.academicYear || new Date().getFullYear().toString();
+        const { lang } = req.query;
         const level = req.query.level; // Optional validation
 
         // Optional: Validate readiness before generating
@@ -200,7 +202,7 @@ exports.generateTranscriptPDF = async (req, res) => {
         const filename = `transcript_${studentId}.pdf`;
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
-        await pdfService.generateTranscript(studentId, semesterId, academicYear, res);
+        await pdfService.generateTranscript(studentId, semesterId, academicYear, res, lang);
 
     } catch (err) {
         if (!res.headersSent) {
