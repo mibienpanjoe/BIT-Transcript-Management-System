@@ -27,15 +27,18 @@ Get up and running with BIT TMS in minutes!
 ### Quick Actions by Role
 
 #### Admin
+
 - **Add a user**: Admin → User Management → Add New User
 - **Import students**: Admin → Student Management → Import Students
 - **Generate transcript**: Admin → Transcript Management → Select Student → Generate PDF
 
 #### Teacher
+
 - **View courses**: Teacher → My Courses
 - **Enter grades**: Teacher → Grade Submission → Select TUE → Enter Grades
 
 #### Schooling Manager
+
 - **Enter attendance**: Manager → Attendance Management → Select TUE → Enter Attendance
 
 ---
@@ -45,17 +48,20 @@ Get up and running with BIT TMS in minutes!
 ### Local Development Setup
 
 #### Prerequisites
+
 - Node.js 18+ and npm
 - MongoDB (local or Atlas)
 - Git
 
 #### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/your-org/bit-tms.git
 cd bit-tms
 ```
 
 #### 2. Backend Setup
+
 ```bash
 # Navigate to backend
 cd backend
@@ -76,6 +82,7 @@ npm run dev
 Backend runs on: `http://localhost:5000`
 
 #### 3. Frontend Setup
+
 ```bash
 # Navigate to frontend (in new terminal)
 cd frontend
@@ -98,12 +105,14 @@ Frontend runs on: `http://localhost:5173`
 #### 4. Create Test Data
 
 Use the provided seed script:
+
 ```bash
 cd backend
 npm run seed
 ```
 
 This creates:
+
 - 1 admin user (admin@bit.edu.bf / Admin123!)
 - 1 teacher user (teacher@bit.edu.bf / Teacher123!)
 - 1 manager user (manager@bit.edu.bf / Manager123!)
@@ -114,6 +123,34 @@ This creates:
 1. Open `http://localhost:5173`
 2. Login with admin credentials
 3. Explore the system!
+
+### Alternative: Docker Setup
+
+The application is fully containerized for both development and production environments.
+
+#### Development with Docker
+
+To get started quickly without installing local dependencies, use the following:
+
+```bash
+docker-compose up --build
+```
+
+- **Hot-ReloadING**: Enabled via bind mounts.
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:5000`
+
+#### Production with Docker
+
+For a high-performance, secure production deployment:
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+- **Nginx**: Serves the frontend reliably and efficiently.
+- **Security**: Runs as a non-root user with minimal exposed ports.
+- **Persistence**: MongoDB data is stored in a dedicated Docker volume.
 
 ### Project Structure
 
@@ -145,6 +182,7 @@ bit-tms/
 ### Common Development Tasks
 
 #### Run Tests
+
 ```bash
 # Backend tests
 cd backend
@@ -156,6 +194,7 @@ npm test
 ```
 
 #### Lint Code
+
 ```bash
 # Backend
 cd backend
@@ -167,6 +206,7 @@ npm run lint
 ```
 
 #### Build for Production
+
 ```bash
 # Backend
 cd backend
@@ -182,12 +222,14 @@ npm run build
 ## Next Steps
 
 ### For Users
+
 - Read your role-specific guide:
   - [Admin Guide](./user-guides/admin-guide.md)
   - [Teacher Guide](./user-guides/teacher-guide.md)
   - [Schooling Manager Guide](./user-guides/schooling-manager-guide.md)
 
 ### For Developers
+
 - Review [Database Schema](./developer-docs/database-schema.md)
 - Understand [Calculation Logic](./developer-docs/calculation-logic.md)
 - Check [API Documentation](./developer-docs/api-documentation.md)
