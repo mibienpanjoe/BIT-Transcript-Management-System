@@ -209,12 +209,24 @@ exports.bulkGenerateTranscripts = async (req, res) => {
         const errors = [];
         for (const student of students) {
             try {
-                const pdfBuffer = await pdfService.generateTranscriptBuffer(
+                let pdfBuffer = await pdfService.generateTranscriptBuffer(
                     student._id,
                     semesterId,
                     academicYear,
                     lang
                 );
+                if (!pdfBuffer) {
+                    throw new Error('PDF buffer not generated');
+                }
+                if (!Buffer.isBuffer(pdfBuffer)) {
+                    if (pdfBuffer instanceof ArrayBuffer) {
+                        pdfBuffer = Buffer.from(pdfBuffer);
+                    } else if (ArrayBuffer.isView(pdfBuffer)) {
+                        pdfBuffer = Buffer.from(pdfBuffer.buffer);
+                    } else {
+                        throw new Error('PDF buffer is not a valid Buffer');
+                    }
+                }
                 const safeId = (student.studentId || student._id.toString()).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const safeName = `${student.lastName || ''}_${student.firstName || ''}`.replace(/[^a-zA-Z0-9_-]/g, '_');
                 const filename = `transcript_${safeId}_${safeName}.pdf`;

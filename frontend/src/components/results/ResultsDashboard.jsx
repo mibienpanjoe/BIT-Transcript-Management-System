@@ -43,6 +43,13 @@ const ResultsDashboard = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
 
+    const selectedPromotionName = promotions.find((promo) => promo._id === selectedPromotion)?.name || 'None';
+    const selectedSummary = selectAllPromotion
+        ? 'All in promotion'
+        : selectedStudentIds.size;
+    const languageLabel = language === 'fr' ? 'French' : 'English';
+    const searchLabel = search ? `Filtered: "${search}"` : null;
+
     useEffect(() => {
         fetchPromotions();
     }, []);
@@ -200,6 +207,37 @@ const ResultsDashboard = () => {
                 Results & Transcripts
             </h1>
 
+            <div
+                className="sticky top-0 z-20 mb-6 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 text-sm text-gray-700 shadow-sm backdrop-blur"
+                aria-live="polite"
+            >
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-medium">Promotion:</span>
+                    <span>{selectedPromotion ? selectedPromotionName : 'Select promotion'}</span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-medium">Year:</span>
+                    <span>{academicYear}</span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-medium">Selected:</span>
+                    <span>{selectedPromotion ? selectedSummary : '—'}</span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-medium">Language:</span>
+                    <span>{languageLabel}</span>
+                    {searchLabel && (
+                        <>
+                            <span className="text-gray-300">|</span>
+                            <span className="font-medium">{searchLabel}</span>
+                        </>
+                    )}
+                    {bulkGenerating && (
+                        <>
+                            <span className="text-gray-300">|</span>
+                            <span className="font-medium text-blue-700">Generating…</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
             <div className="bg-white p-6 rounded-lg shadow mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -336,6 +374,7 @@ const ResultsDashboard = () => {
                                         checked={students.length > 0 && students.every((student) => selectedStudentIds.has(student._id))}
                                         onChange={toggleSelectAllPage}
                                         disabled={students.length === 0 || selectAllPromotion}
+                                        className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     />
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No.</th>
@@ -353,6 +392,7 @@ const ResultsDashboard = () => {
                                             checked={selectedStudentIds.has(student._id)}
                                             onChange={() => toggleStudentSelection(student._id)}
                                             disabled={selectAllPromotion}
+                                            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.registrationNumber}</td>
