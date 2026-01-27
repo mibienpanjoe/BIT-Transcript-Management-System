@@ -1,6 +1,19 @@
 # --- Build Stage ---
 FROM node:20-alpine AS builder
 
+# Install Chromium for dev PDF generation
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Set environment variable for Puppeteer to find Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 WORKDIR /app
 
 # Copy package files and install ALL dependencies (including dev for potential tests/builds)

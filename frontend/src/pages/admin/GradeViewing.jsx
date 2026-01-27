@@ -258,7 +258,6 @@ const GradeViewing = () => {
                     evaluation: changes.evaluation !== undefined
                         ? changes.evaluation
                         : student?.grade?.evaluation || 0,
-                    academicYear: new Date().getFullYear().toString()
                 };
                 return submitGrade(payload);
             });

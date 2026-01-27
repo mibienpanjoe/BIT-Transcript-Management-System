@@ -202,10 +202,10 @@ async function seed() {
     };
 
     const semesters = await Semester.create([
-        { promotionId: promoMap.EE._id, level: 'L3', order: 1 },
-        { promotionId: promoMap.EE._id, level: 'L3', order: 2 },
-        { promotionId: promoMap.CS._id, level: 'L3', order: 1 },
-        { promotionId: promoMap.CS._id, level: 'L3', order: 2 },
+        { promotionId: promoMap.EE._id, level: 'L3', order: 1, name: 'S5' },
+        { promotionId: promoMap.EE._id, level: 'L3', order: 2, name: 'S6' },
+        { promotionId: promoMap.CS._id, level: 'L3', order: 1, name: 'S5' },
+        { promotionId: promoMap.CS._id, level: 'L3', order: 2, name: 'S6' },
     ]);
 
     const semesterMap = {

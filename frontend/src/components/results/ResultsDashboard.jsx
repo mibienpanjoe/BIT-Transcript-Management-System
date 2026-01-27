@@ -20,7 +20,7 @@ const ResultsDashboard = () => {
     const [promotions, setPromotions] = useState([]);
     const [selectedPromotion, setSelectedPromotion] = useState('');
 
-    const [academicYears] = useState(generateAcademicYears());
+    const [academicYears, setAcademicYears] = useState(generateAcademicYears());
     const [academicYear, setAcademicYear] = useState(academicYears[2]); // Default to current year
 
     const [loading, setLoading] = useState(false);
@@ -98,7 +98,19 @@ const ResultsDashboard = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Promotion</label>
                         <select
                             value={selectedPromotion}
-                            onChange={(e) => setSelectedPromotion(e.target.value)}
+                            onChange={(e) => {
+                                const promoId = e.target.value;
+                                setSelectedPromotion(promoId);
+                                const selected = promotions.find((promo) => promo._id === promoId);
+                                if (selected?.academicYear) {
+                                    setAcademicYears((prev) => (
+                                        prev.includes(selected.academicYear)
+                                            ? prev
+                                            : [...prev, selected.academicYear]
+                                    ));
+                                    setAcademicYear(selected.academicYear);
+                                }
+                            }}
                             className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border"
                         >
                             <option value="">Select Promotion</option>

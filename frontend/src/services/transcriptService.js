@@ -1,7 +1,9 @@
 import api from './api';
 
-export const getTranscriptData = (studentId) => {
-    return api.get(`/transcripts/student/${studentId}`);
+export const getTranscriptData = (studentId, academicYear) => {
+    return api.get(`/transcripts/student/${studentId}`, {
+        params: academicYear ? { academicYear } : undefined
+    });
 };
 
 export const generateTranscriptPDF = (studentId, semesterId = null, lang = 'en') => {

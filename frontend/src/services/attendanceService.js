@@ -14,12 +14,7 @@ export const getTUEsForAttendance = async (semesterId) => {
 export const submitAttendance = async (data) => {
     // data: { studentId, tueId, presence }
     // We use the same grade endpoint but only send presence
-    // Add academicYear as it is required by the backend model
-    const payload = {
-        ...data,
-        academicYear: new Date().getFullYear().toString()
-    };
-    const response = await api.post('/grades', payload);
+    const response = await api.post('/grades', data);
     return response.data;
 };
 
@@ -39,8 +34,6 @@ export const downloadAttendanceTemplate = async (tueId) => {
 export const importAttendance = async (tueId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    // Add academicYear if needed, or let backend default to current
-    formData.append('academicYear', new Date().getFullYear().toString());
 
     const response = await api.post(`/grades/attendance/import/${tueId}`, formData, {
         headers: {

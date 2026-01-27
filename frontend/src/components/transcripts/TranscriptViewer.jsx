@@ -4,7 +4,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import Alert from '../common/Alert';
 import { formatGrade } from '../../utils/formatters';
 
-const TranscriptViewer = ({ studentId }) => {
+const TranscriptViewer = ({ studentId, academicYear }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -15,7 +15,7 @@ const TranscriptViewer = ({ studentId }) => {
             try {
                 setLoading(true);
                 setError(null);
-                const response = await getTranscriptData(studentId);
+                const response = await getTranscriptData(studentId, academicYear);
                 setData(response.data);
             } catch (err) {
                 console.error('Transcript load error:', err);
@@ -25,7 +25,7 @@ const TranscriptViewer = ({ studentId }) => {
             }
         };
         loadData();
-    }, [studentId]);
+    }, [studentId, academicYear]);
 
     if (loading) return <LoadingSpinner />;
     if (error) return <Alert type="error" message={error} />;

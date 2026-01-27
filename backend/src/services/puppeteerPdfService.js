@@ -167,6 +167,61 @@ const getRatingLabel = (average, i18n, lang) => {
     return isFr ? 'Echec (F)' : 'Fail (F)';
 };
 
+const courseTranslationsFr = {
+    'Renewable Energy IV': 'Energie renouvelable IV',
+    'Power Systems III': 'Systemes de puissance III',
+    'Digital Electronics II': 'Electronique numerique II',
+    'Energy Management': "Gestion de l'energie",
+    'Smart Grids': 'Reseaux intelligents',
+    'Telecommunications': 'Telecommunications',
+    'Research Methods': 'Methodes de recherche',
+    'Control Systems': 'Systemes de commande',
+    'Power Electronics': 'Electronique de puissance',
+    'Internship': 'Stage',
+    'Project Management': 'Gestion de projet',
+    'Entrepreneurship': 'Entrepreneuriat',
+    'Advanced Programming': 'Programmation avancee',
+    'Database Systems': 'Systemes de bases de donnees',
+    'Web Development': 'Developpement web',
+    'Operating Systems': "Systemes d'exploitation",
+    'Computer Networks': 'Reseaux informatiques',
+    'Software Engineering': 'Genie logiciel',
+    'AI Fundamentals': "Fondamentaux de l'IA",
+    'Mobile Development': 'Developpement mobile',
+    'Cloud Computing': 'Informatique en nuage',
+    'Capstone Project': "Projet de fin d'etudes",
+    'Security': 'Securite',
+    'Solar Thermal Energy': 'Energie solaire thermique',
+    'Wind Energy Systems': "Systemes d'energie eolienne",
+    'Electrical Machines': 'Machines electriques',
+    'Power Distribution': 'Distribution electrique',
+    'Microcontrollers': 'Microcontroleurs',
+    'FPGA Design': 'Conception FPGA',
+    'Object-Oriented Programming': 'Programmation orientee objet',
+    'Data Structures & Algorithms': 'Structures de donnees et algorithmes',
+    'SQL & Relational Databases': 'SQL et bases de donnees relationnelles',
+    'NoSQL Databases': 'Bases de donnees NoSQL',
+    'Frontend Development': 'Developpement frontend',
+    'Backend Development': 'Developpement backend'
+};
+
+const translateCourseName = (name, lang) => {
+    if (lang !== 'fr') return name;
+    if (courseTranslationsFr[name]) return courseTranslationsFr[name];
+
+    if (name.endsWith(' Fundamentals')) {
+        return name.replace(' Fundamentals', ' Fondamentaux');
+    }
+    if (name.endsWith(' Lab')) {
+        return name.replace(' Lab', ' TP');
+    }
+    if (name.includes(' Part ')) {
+        return name.replace(' Part ', ' Partie ');
+    }
+
+    return name;
+};
+
 exports.generateTranscript = async (studentId, semesterId, academicYear, res, lang = 'en') => {
     let page = null;
     try {
@@ -275,7 +330,7 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res, la
                     const tue = tues[i];
                     const grade = await Grade.findOne({ studentId, tueId: tue._id, academicYear });
                     tuesData.push({
-                        name: tue.name,
+                        name: translateCourseName(tue.name, lang),
                         credits: tue.credits,
                         grade: grade ? grade.finalGrade.toFixed(2) : '-',
                         isFirst: i === 0
@@ -287,7 +342,7 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res, la
                 semesterTotalRows += tueCount;
 
                 semesterData.tus.push({
-                    name: tu.name,
+                    name: translateCourseName(tu.name, lang),
                     totalCredits: tu.credits,
                     average: tuRes.average.toFixed(2),
                     creditsEarned: tuRes.creditsEarned,

@@ -19,17 +19,28 @@ const AnnualResultsTable = ({ promotionId, academicYear }) => {
     const fetchResults = async () => {
         setLoading(true);
         try {
-            // We need to know the level. For now, we'll fetch students to get the level or assume it from promotion
-            // A better way is to fetch promotion details first.
-            const promoRes = await api.get(`/promotions/${promotionId}`);
-            const level = promoRes.data.level;
+            const [promoRes, studentsRes] = await Promise.all([
+                api.get(`/promotions/${promotionId}`),
+                api.get(`/students/promotion/${promotionId}`)
+            ]);
+
+            const promotion = promoRes.data.data || promoRes.data;
+            const level = promotion?.level;
+
+            const studentsData = studentsRes.data.data || studentsRes.data;
+            const studentIds = new Set(studentsData.map((student) => student._id));
 
             const res = await api.get('/calculations/annual-results', {
                 params: { academicYear, level }
             });
 
-            setResults(res.data.data || res.data);
-            calculateStats(res.data.data || res.data);
+            const rawResults = res.data.data || res.data;
+            const filteredResults = rawResults.filter((result) =>
+                studentIds.has(result.studentId?._id)
+            );
+
+            setResults(filteredResults);
+            calculateStats(filteredResults);
         } catch (error) {
             console.error('Error fetching annual results:', error);
             toast.error('Failed to load annual results.');
