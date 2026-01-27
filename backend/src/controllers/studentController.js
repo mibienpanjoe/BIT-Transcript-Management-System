@@ -6,7 +6,7 @@ const excelService = require('../services/excelService');
 // @access  Private/Admin
 exports.getStudents = async (req, res) => {
     try {
-        const { field, promotion, year, search, fieldId, promotionId, academicYear } = req.query;
+        const { field, promotion, year, search, fieldId, promotionId, academicYear, page, limit } = req.query;
         let query = { isActive: true };
 
         if (field || fieldId) query.fieldId = field || fieldId;
@@ -36,14 +36,32 @@ exports.getStudents = async (req, res) => {
             }
         }
 
-        const students = await Student.find(query)
+        const parsedLimit = limit ? Math.max(parseInt(limit, 10), 1) : null;
+        const parsedPage = page ? Math.max(parseInt(page, 10), 1) : 1;
+
+        const baseQuery = Student.find(query)
             .populate('fieldId', 'name code')
             .populate('promotionId', 'name level')
             .sort({ studentId: 1 }); // Sort by studentId for consistent ordering
 
+        let students = [];
+        let total = 0;
+
+        if (parsedLimit) {
+            total = await Student.countDocuments(query);
+            const skip = (parsedPage - 1) * parsedLimit;
+            students = await baseQuery.skip(skip).limit(parsedLimit);
+        } else {
+            students = await baseQuery;
+            total = students.length;
+        }
+
         res.status(200).json({
             success: true,
             count: students.length,
+            total,
+            page: parsedLimit ? parsedPage : 1,
+            pages: parsedLimit ? Math.ceil(total / parsedLimit) : 1,
             data: students,
         });
     } catch (err) {

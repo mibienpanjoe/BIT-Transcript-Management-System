@@ -222,7 +222,7 @@ const translateCourseName = (name, lang) => {
     return name;
 };
 
-exports.generateTranscript = async (studentId, semesterId, academicYear, res, lang = 'en') => {
+const buildTranscriptPdfBuffer = async (studentId, semesterId, academicYear, lang = 'en', { debug } = {}) => {
     let page = null;
     try {
         const locale = lang === 'fr' ? 'fr-FR' : 'en-GB';
@@ -404,13 +404,14 @@ const html = compiledTemplate({
     styles: cachedStyles  // ADD THIS - inject CSS into template
 });
 
-// DEBUG: Save HTML to disk
-try {
-    fs.writeFileSync('debug_last_transcript.html', html);
-    console.log('[PDF Debug] Saved debug_last_transcript.html');
-} catch (e) { 
-    console.error('Failed to save debug HTML:', e); 
-}
+        if (debug) {
+            try {
+                fs.writeFileSync('debug_last_transcript.html', html);
+                console.log('[PDF Debug] Saved debug_last_transcript.html');
+            } catch (e) {
+                console.error('Failed to save debug HTML:', e);
+            }
+        }
 
 // 4. Generate PDF with timeout protection
 const browserInstance = await initBrowser();
@@ -452,23 +453,19 @@ const pdfBuffer = await withTimeout(
     'PDF generation timeout (15s)'
 );
 
-        // DEBUG: Save PDF to disk
-        try {
-            fs.writeFileSync('debug_last_transcript.pdf', pdfBuffer);
-            console.log('[PDF Debug] Saved debug_last_transcript.pdf');
-        } catch (e) { console.error('Failed to save debug PDF:', e); }
+        if (debug) {
+            try {
+                fs.writeFileSync('debug_last_transcript.pdf', pdfBuffer);
+                console.log('[PDF Debug] Saved debug_last_transcript.pdf');
+            } catch (e) {
+                console.error('Failed to save debug PDF:', e);
+            }
+        }
 
-        // 5. Send Response
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=transcript_${studentId}.pdf`);
-        res.setHeader('Content-Length', pdfBuffer.length);
-        res.end(pdfBuffer);
-
+        return pdfBuffer;
     } catch (error) {
         console.error('Puppeteer PDF Generation Error:', error);
-        if (!res.headersSent) {
-            res.status(500).json({ success: false, message: error.message });
-        }
+        throw error;
     } finally {
         // Always close page, even on error
         if (page) {
@@ -477,6 +474,25 @@ const pdfBuffer = await withTimeout(
             } catch (closeErr) {
                 console.error('Error closing page:', closeErr);
             }
+        }
+    }
+};
+
+exports.generateTranscriptBuffer = async (studentId, semesterId, academicYear, lang = 'en') => (
+    buildTranscriptPdfBuffer(studentId, semesterId, academicYear, lang, { debug: false })
+);
+
+exports.generateTranscript = async (studentId, semesterId, academicYear, res, lang = 'en') => {
+    try {
+        const pdfBuffer = await buildTranscriptPdfBuffer(studentId, semesterId, academicYear, lang, { debug: true });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=transcript_${studentId}.pdf`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.end(pdfBuffer);
+    } catch (error) {
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 };

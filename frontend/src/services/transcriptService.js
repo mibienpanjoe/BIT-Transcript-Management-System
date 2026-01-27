@@ -20,9 +20,14 @@ export const generateTranscriptPDF = (studentId, semesterId = null, lang = 'en')
     });
 };
 
-export const bulkGenerateTranscripts = (studentIds, semesterId = null) => {
+export const bulkGenerateTranscripts = ({ studentIds, promotionId, academicYear, semesterId = null, lang = 'en' }) => {
     return api.post('/transcripts/bulk-generate', {
         studentIds,
-        semesterId
+        promotionId,
+        academicYear,
+        semesterId,
+        lang
+    }, {
+        responseType: 'blob'
     });
 };

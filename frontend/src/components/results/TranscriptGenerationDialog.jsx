@@ -4,12 +4,15 @@ import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaFilePdf, FaSpinn
 import api from '../../services/api';
 import PropTypes from 'prop-types';
 
-const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) => {
+const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear, language: controlledLanguage, onLanguageChange }) => {
     const [loading, setLoading] = useState(true);
     const [validation, setValidation] = useState(null);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(null);
-    const [language, setLanguage] = useState('en');
+    const [internalLanguage, setInternalLanguage] = useState('en');
+
+    const language = controlledLanguage ?? internalLanguage;
+    const setLanguage = onLanguageChange ?? setInternalLanguage;
 
     const validateReadiness = useCallback(async () => {
         setLoading(true);
@@ -33,7 +36,9 @@ const TranscriptGenerationDialog = ({ isOpen, onClose, student, academicYear }) 
 
     useEffect(() => {
         if (isOpen && student) {
-            setLanguage('en');
+            if (controlledLanguage === undefined) {
+                setLanguage('en');
+            }
             validateReadiness();
         }
     }, [isOpen, student, validateReadiness]);
@@ -225,6 +230,8 @@ TranscriptGenerationDialog.propTypes = {
     onClose: PropTypes.func.isRequired,
     student: PropTypes.object,
     academicYear: PropTypes.string.isRequired,
+    language: PropTypes.string,
+    onLanguageChange: PropTypes.func,
 };
 
 export default TranscriptGenerationDialog;

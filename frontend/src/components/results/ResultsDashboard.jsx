@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaFilePdf, FaEye, FaSync, FaList, FaTable } from 'react-icons/fa';
+import { FaFilePdf, FaList, FaTable } from 'react-icons/fa';
 import api from '../../services/api';
 import TranscriptGenerationDialog from './TranscriptGenerationDialog';
 import AnnualResultsTable from './AnnualResultsTable';
 import { toast } from 'react-toastify';
+import { bulkGenerateTranscripts } from '../../services/transcriptService';
 
 const generateAcademicYears = () => {
     const currentYear = new Date().getFullYear();
@@ -23,6 +24,18 @@ const ResultsDashboard = () => {
     const [academicYears, setAcademicYears] = useState(generateAcademicYears());
     const [academicYear, setAcademicYear] = useState(academicYears[2]); // Default to current year
 
+    const [searchInput, setSearchInput] = useState('');
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [limit] = useState(20);
+    const [total, setTotal] = useState(0);
+    const [pages, setPages] = useState(1);
+
+    const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
+    const [selectAllPromotion, setSelectAllPromotion] = useState(false);
+    const [bulkGenerating, setBulkGenerating] = useState(false);
+    const [language, setLanguage] = useState('en');
+
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('students'); // 'students' or 'results'
 
@@ -38,6 +51,21 @@ const ResultsDashboard = () => {
         if (selectedPromotion) {
             fetchStudents(selectedPromotion);
         }
+    }, [selectedPromotion, academicYear, search, page]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearch(searchInput.trim());
+            setPage(1);
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [searchInput]);
+
+    useEffect(() => {
+        setPage(1);
+        setSelectedStudentIds(new Set());
+        setSelectAllPromotion(false);
     }, [selectedPromotion, academicYear]);
 
     const fetchPromotions = async () => {
@@ -53,13 +81,106 @@ const ResultsDashboard = () => {
     const fetchStudents = async (promotionId) => {
         setLoading(true);
         try {
-            const response = await api.get(`/students/promotion/${promotionId}`);
-            setStudents(response.data.data || response.data);
+            const response = await api.get('/students', {
+                params: {
+                    promotionId,
+                    academicYear,
+                    search: search || undefined,
+                    page,
+                    limit
+                }
+            });
+            const payload = response.data;
+            setStudents(payload.data || []);
+            setTotal(payload.total || payload.count || 0);
+            setPages(payload.pages || 1);
         } catch (error) {
             console.error('Error fetching students:', error);
             toast.error('Failed to load students for this promotion.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleStudentSelection = (studentId) => {
+        setSelectedStudentIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(studentId)) {
+                next.delete(studentId);
+            } else {
+                next.add(studentId);
+            }
+            return next;
+        });
+        setSelectAllPromotion(false);
+    };
+
+    const toggleSelectAllPage = () => {
+        setSelectedStudentIds((prev) => {
+            const next = new Set(prev);
+            const allSelected = students.length > 0 && students.every((student) => next.has(student._id));
+            if (allSelected) {
+                students.forEach((student) => next.delete(student._id));
+            } else {
+                students.forEach((student) => next.add(student._id));
+            }
+            return next;
+        });
+        setSelectAllPromotion(false);
+    };
+
+    const handleSelectAllPromotion = () => {
+        setSelectAllPromotion((prev) => {
+            const next = !prev;
+            if (next) {
+                setSelectedStudentIds(new Set());
+            }
+            return next;
+        });
+    };
+
+    const handleBulkGenerate = async () => {
+        if (!selectedPromotion || !academicYear) {
+            toast.error('Select a promotion and academic year first.');
+            return;
+        }
+
+        if (!selectAllPromotion && selectedStudentIds.size === 0) {
+            toast.info('Select at least one student.');
+            return;
+        }
+
+        const confirmMessage = selectAllPromotion
+            ? `Generate transcripts for all ${total || 'selected'} students in this promotion?`
+            : `Generate transcripts for ${selectedStudentIds.size} selected students?`;
+
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        setBulkGenerating(true);
+        try {
+            const payload = selectAllPromotion
+                ? { promotionId: selectedPromotion, academicYear, lang: language }
+                : { studentIds: Array.from(selectedStudentIds), academicYear, lang: language };
+
+            const response = await bulkGenerateTranscripts(payload);
+            const blob = new Blob([response.data], { type: 'application/zip' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `transcripts_${selectedPromotion}_${academicYear}_${language}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.success('Bulk transcripts generated.');
+        } catch (error) {
+            console.error('Bulk transcript error:', error);
+            toast.error(error.response?.data?.message || 'Failed to generate transcripts.');
+        } finally {
+            setBulkGenerating(false);
         }
     };
 
@@ -101,6 +222,7 @@ const ResultsDashboard = () => {
                             onChange={(e) => {
                                 const promoId = e.target.value;
                                 setSelectedPromotion(promoId);
+                                setPage(1);
                                 const selected = promotions.find((promo) => promo._id === promoId);
                                 if (selected?.academicYear) {
                                     setAcademicYears((prev) => (
@@ -151,9 +273,71 @@ const ResultsDashboard = () => {
 
             {activeTab === 'students' ? (
                 <div className="bg-white shadow rounded-lg overflow-hidden">
+                    <div className="flex flex-col gap-4 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or ID"
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={toggleSelectAllPage}
+                                    className="rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                    disabled={students.length === 0 || selectAllPromotion}
+                                >
+                                    {students.length > 0 && students.every((student) => selectedStudentIds.has(student._id))
+                                        ? 'Unselect page'
+                                        : 'Select page'}
+                                </button>
+                                <button
+                                    onClick={handleSelectAllPromotion}
+                                    className={`rounded-md border px-3 py-2 text-xs font-medium ${selectAllPromotion ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                    disabled={!selectedPromotion}
+                                >
+                                    {selectAllPromotion ? 'All promotion selected' : 'Select all in promotion'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="text-sm text-gray-600">
+                                {selectAllPromotion
+                                    ? 'Selected: all in promotion'
+                                    : `Selected: ${selectedStudentIds.size}`}
+                            </div>
+                            <select
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                            >
+                                <option value="en">English</option>
+                                <option value="fr">French</option>
+                            </select>
+                            <button
+                                onClick={handleBulkGenerate}
+                                disabled={bulkGenerating || (!selectAllPromotion && selectedStudentIds.size === 0)}
+                                className="flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {bulkGenerating ? 'Generating...' : 'Generate ZIP'}
+                            </button>
+                        </div>
+                    </div>
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input
+                                        type="checkbox"
+                                        checked={students.length > 0 && students.every((student) => selectedStudentIds.has(student._id))}
+                                        onChange={toggleSelectAllPage}
+                                        disabled={students.length === 0 || selectAllPromotion}
+                                    />
+                                </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No.</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -163,6 +347,14 @@ const ResultsDashboard = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {students.map((student) => (
                                 <tr key={student._id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedStudentIds.has(student._id)}
+                                            onChange={() => toggleStudentSelection(student._id)}
+                                            disabled={selectAllPromotion}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.registrationNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.firstName} {student.lastName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -183,20 +375,43 @@ const ResultsDashboard = () => {
                             ))}
                             {students.length === 0 && !loading && (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center text-sm text-gray-500">
+                                    <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
                                         {selectedPromotion ? 'No students found' : 'Select a promotion to view students'}
                                     </td>
                                 </tr>
                             )}
                             {loading && (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center text-sm text-gray-500">
+                                    <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
                                         Loading...
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
+                    {selectedPromotion && pages > 1 && (
+                        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 text-sm text-gray-600">
+                            <span>
+                                Page {page} of {pages} • {total} students
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page === 1}
+                                    className="rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pages))}
+                                    disabled={page === pages}
+                                    className="rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : selectedPromotion ? (
                 <AnnualResultsTable
@@ -211,6 +426,8 @@ const ResultsDashboard = () => {
                 onClose={handleCloseDialog}
                 student={selectedStudent}
                 academicYear={academicYear}
+                language={language}
+                onLanguageChange={setLanguage}
             />
         </div>
     );

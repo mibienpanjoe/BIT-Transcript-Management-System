@@ -114,16 +114,16 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
+ *               studentIds:
+ *                 type: array
+ *                 items: { type: string }
  *               semesterId: { type: string }
  *               promotionId: { type: string }
  *               academicYear: { type: string }
+ *               lang: { type: string, enum: [en, fr] }
  *     responses:
  *       200:
- *         description: Bulk generation results
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: ZIP file
  */
 
 // Protect all routes and restrict to admin
