@@ -33,7 +33,7 @@ npm run dev
 
 Backend runs on `http://localhost:5000` and frontend on `http://localhost:5173`.
 
-## Docker (Optional)
+## Or with Docker
 
 ```bash
 docker compose up --build
