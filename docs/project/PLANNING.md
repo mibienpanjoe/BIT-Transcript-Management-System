@@ -69,17 +69,17 @@ Semester Average = Σ(TU Average × TU Credits) / Σ(TU Credits)
 ### 3. Validation Rules
 
 #### TU Validation
-- **Validated (V)**: TU Average ≥ 8.00/20
+- **Validated (V)**: TU Average ≥ 12.00/20
 - **Not Validated (NV)**: TU Average < 8.00/20
 - **Validated by Compensation (V-C)**: 
-  - TU Average ≥ 6.00/20 AND < 8.00/20
-  - Semester Average ≥ 10.00/20
+  - TU Average ≥ 8.00/20 AND < 12.00/20
+  - Semester Average ≥ 12.00/20
   - Maximum 1 TU per semester can be compensated
 
 #### Semester Validation
 A semester is validated if **BOTH** conditions are met:
-1. Semester Average ≥ 10.00/20
-2. All TUs ≥ 8.00/20 (or validated by compensation)
+1. Semester Average ≥ 12.00/20
+2. All TUs ≥ 12.00/20 (or validated by compensation)
 
 ### 4. Mention (Grade Rating) Scale
 

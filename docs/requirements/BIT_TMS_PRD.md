@@ -101,8 +101,8 @@ Admin actions:
 ### Automatic Calculations
 - TUE → TU average  
 - TU → Semester average  
-- TU validated: avg ≥ 8  
-- Semester validated: avg ≥ 10 & all TUs ≥ 8  
+- TU validated: avg ≥ 12  
+- Semester validated: avg ≥ 12 & all TUs ≥ 12  
 - Mention scaling: A++ to F  
 
 ---

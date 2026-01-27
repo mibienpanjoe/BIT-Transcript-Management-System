@@ -159,23 +159,23 @@ TU Average = (31.80 + 14.50) / (2 + 1)
 
 A TU can have one of three validation statuses:
 
-1. **V (Validated)**: TU Average ≥ 8.00/20
-2. **NV (Not Validated)**: TU Average < 6.00/20
+1. **V (Validated)**: TU Average ≥ 12.00/20
+2. **NV (Not Validated)**: TU Average < 8.00/20
 3. **V-C (Validated by Compensation)**: 
-   - TU Average ≥ 6.00/20 AND < 8.00/20
-   - Semester Average ≥ 10.00/20
+   - TU Average ≥ 8.00/20 AND < 12.00/20
+   - Semester Average ≥ 12.00/20
    - Maximum 1 TU per semester can be compensated
 
 ### Decision Tree
 
 ```
-Is TU Average ≥ 8.00?
+Is TU Average ≥ 12.00?
 ├─ YES → Status = V (Validated)
 └─ NO
-   └─ Is TU Average < 6.00?
+   └─ Is TU Average < 8.00?
       ├─ YES → Status = NV (Not Validated)
-      └─ NO (6.00 ≤ Average < 8.00)
-         └─ Is Semester Average ≥ 10.00?
+      └─ NO (8.00 ≤ Average < 12.00)
+         └─ Is Semester Average ≥ 12.00?
             ├─ YES → Status = V-C (Validated by Compensation)*
             └─ NO → Status = NV (Not Validated)
 
@@ -186,24 +186,24 @@ Is TU Average ≥ 8.00?
 
 #### Example 1: Validated (V)
 - TU Average: 12.50/20
-- Status: **V** (≥ 8.00)
+- Status: **V** (≥ 12.00)
 - Credits Earned: Full credits
 
 #### Example 2: Not Validated (NV)
 - TU Average: 5.50/20
-- Status: **NV** (< 6.00)
+- Status: **NV** (< 8.00)
 - Credits Earned: 0
 
 #### Example 3: Validated by Compensation (V-C)
-- TU Average: 7.00/20
-- Semester Average: 11.00/20
-- Status: **V-C** (6.00 ≤ 7.00 < 8.00 AND semester ≥ 10.00)
+- TU Average: 10.50/20
+- Semester Average: 12.50/20
+- Status: **V-C** (8.00 ≤ 10.50 < 12.00 AND semester ≥ 12.00)
 - Credits Earned: Full credits
 
 #### Example 4: Not Validated (NV) - Compensation Failed
-- TU Average: 7.00/20
-- Semester Average: 9.50/20
-- Status: **NV** (semester average < 10.00)
+- TU Average: 10.50/20
+- Semester Average: 11.50/20
+- Status: **NV** (semester average < 12.00)
 - Credits Earned: 0
 
 ### Compensation Limit
@@ -212,9 +212,9 @@ Is TU Average ≥ 8.00?
 
 **Logic**:
 1. Calculate all TU averages
-2. Identify TUs with 6.00 ≤ average < 8.00
-3. If semester average ≥ 10.00:
-   - Validate the TU with the highest average (closest to 8.00)
+2. Identify TUs with 8.00 ≤ average < 12.00
+3. If semester average ≥ 12.00:
+    - Validate the TU with the highest average (closest to 12.00)
    - Mark as V-C
    - Mark others as NV
 
@@ -271,13 +271,13 @@ Semester Average = (46.29 + 51.20 + 42.60 + 23.00 + 32.00 + 26.00) / (3 + 4 + 3 
 
 A semester is validated if **BOTH** conditions are met:
 
-1. **Semester Average ≥ 10.00/20**
+1. **Semester Average ≥ 12.00/20**
 2. **All TUs are validated** (status = V or V-C)
 
 ### Decision Tree
 
 ```
-Is Semester Average ≥ 10.00?
+Is Semester Average ≥ 12.00?
 ├─ NO → Status = NOT_VALIDATED
 └─ YES
    └─ Are all TUs validated (V or V-C)?
@@ -293,9 +293,9 @@ Is Semester Average ≥ 10.00?
 - Result: **VALIDATED** ✅
 
 #### Example 2: Not Validated (Low Average)
-- Semester Average: 9.50/20
+- Semester Average: 11.50/20
 - TU Statuses: V, V, V, V, V, V
-- Result: **NOT_VALIDATED** ❌ (average < 10.00)
+- Result: **NOT_VALIDATED** ❌ (average < 12.00)
 
 #### Example 3: Not Validated (TU Failed)
 - Semester Average: 11.00/20
@@ -303,7 +303,7 @@ Is Semester Average ≥ 10.00?
 - Result: **NOT_VALIDATED** ❌ (one TU not validated)
 
 #### Example 4: Validated with Compensation
-- Semester Average: 11.50/20
+- Semester Average: 12.50/20
 - TU Statuses: V, V, V-C, V, V, V
 - Result: **VALIDATED** ✅ (V-C counts as validated)
 
@@ -426,13 +426,13 @@ function calculateTUAverage(tueGrades) {
 
 // TU Validation
 function validateTU(tuAverage, semesterAverage, compensationUsed) {
-  if (tuAverage >= 8.00) {
+  if (tuAverage >= 12.00) {
     return 'V';
-  } else if (tuAverage < 6.00) {
+  } else if (tuAverage < 8.00) {
     return 'NV';
   } else {
-    // 6.00 <= tuAverage < 8.00
-    if (semesterAverage >= 10.00 && !compensationUsed) {
+    // 8.00 <= tuAverage < 12.00
+    if (semesterAverage >= 12.00 && !compensationUsed) {
       return 'V-C';
     } else {
       return 'NV';

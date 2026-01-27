@@ -109,8 +109,8 @@ const getI18n = (lang) => {
         noteNV: isFr ? 'NV: TU Non Validee;' : 'NV: TU Not Validated;',
         noteVC: isFr ? 'V/C: TU Validee par Compensation.' : 'V/C: TU Validated by Compensation.',
         semesterRule: isFr
-            ? 'Un semestre est valide si et seulement si la moyenne du semestre ≥ 10 et la moyenne de chaque TU ≥ 08;'
-            : 'A semester is validated if and only if the semester average ≥ 10 and the average of each TU ≥ 08;',
+            ? 'Un semestre est valide si et seulement si la moyenne du semestre ≥ 12 et la moyenne de chaque TU ≥ 12 (une TU entre 8 et 12 peut etre compensee);'
+            : 'A semester is validated if and only if the semester average ≥ 12 and the average of each TU ≥ 12 (one TU between 8 and 12 can be compensated);',
         invalidNotice: isFr
             ? 'Toute suppression ou surcharge entraine la nullite de ce document;'
             : 'Any deletion or overload causes the invalidity of this document;',

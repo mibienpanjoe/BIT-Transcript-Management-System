@@ -148,7 +148,7 @@ Semester Average = Σ(TU Average × TU Credits) / Σ(TU Credits)
 ```
 
 ### What does "V-C" mean?
-V-C means "Validated by Compensation". A TU with average 6.00-7.99 can be validated if the semester average is ≥ 10.00.
+V-C means "Validated by Compensation". A TU with average 8.00-11.99 can be validated if the semester average is ≥ 12.00.
 
 ### How many TUs can be compensated per semester?
 Maximum 1 TU per semester can be validated by compensation.

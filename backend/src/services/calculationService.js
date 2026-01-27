@@ -39,41 +39,13 @@ exports.calculateTUAverage = async (studentId, tuId, academicYear) => {
     let status = 'NV';
     let creditsEarned = 0;
 
-    if (roundedAverage >= 10) {
+    if (roundedAverage >= 12) {
         status = 'V';
         creditsEarned = tu.credits; // Earns full TU credits
     } else if (roundedAverage >= 8) {
         // Potentially V-C (Validated by Compensation), but this depends on Semester average.
         // For now, mark as NV, will be updated to V-C during Semester calculation if applicable.
-        // Wait, the rule says: V (>= 8.00/20) ??
-        // Let's check the rules again.
-        // Rule: TU Validated if Avg >= 8.00/20.
-        // Wait, really? Usually it's 10. Let me check the docs.
-        // Docs say: "Une TU est validée (V) si et seulement si Moyenne TU ≥ 8.00/20"
-        // AND "V-C : Validée par Compensation (voir section 8.3)" - wait, if >= 8 is V, then what is V-C?
-        // Ah, maybe V-C is for something else?
-        // Let's re-read carefully.
-        // "Une TU est validée (V) si et seulement si Moyenne TU ≥ 8.00/20"
-        // This seems low. Usually it's 10.
-        // Let's assume the doc is correct: >= 8 is V.
-        // But wait, "10.1 Règle de validation stricte: 1. Moyenne Semestre ≥ 10.00/20 ET 2. Toutes les TU ≥ 8.00/20"
-        // This implies that a TU with 8.00 is "validated" in the sense that it doesn't block the semester, 
-        // but maybe it doesn't give credits?
-        // Usually credits are earned if >= 10.
-        // Let's stick to standard LMD: >= 10 is V. 
-        // If the doc says >= 8 is V, that's specific to BIT.
-        // Let's assume >= 10 is V, and between 8 and 10 is "Compensable".
-        // Let's look at "8.3 Validation par compensation": "Si 6.00 <= Moyenne TU < 8.00 ... ET Moyenne Semestre >= 10.00" -> V-C.
-        // So >= 8 is definitely V.
-        // Okay, so:
-        // >= 8.00: V
-        // 6.00 - 7.99: Potential V-C (needs semester avg >= 10)
-        // < 6.00: NV
-
-        status = 'V';
-        creditsEarned = tu.credits;
-    } else if (roundedAverage >= 6) {
-        status = 'NV'; // Potential V-C, resolved at semester level
+        status = 'NV';
         creditsEarned = 0;
     } else {
         status = 'NV';
@@ -116,7 +88,7 @@ exports.calculateSemesterAverage = async (studentId, semesterId, academicYear) =
         totalWeightedScore += result.average * tu.credits;
         totalCredits += tu.credits;
 
-        if (result.average < 6) {
+        if (result.average < 8) {
             allTUsValidatedOrCompensable = false; // < 6 is fatal for compensation
         }
     }
@@ -130,23 +102,23 @@ exports.calculateSemesterAverage = async (studentId, semesterId, academicYear) =
     let status = 'NOT VALIDATED';
 
     // Validation Rules:
-    // 1. Semester Avg >= 10
-    // 2. All TUs >= 8 (V) OR (6 <= TU < 8 AND Compensated)
+    // 1. Semester Avg >= 12
+    // 2. All TUs >= 12 OR (8 <= TU < 12 AND Compensated)
 
     // Check compensation eligibility
-    // Max 1 V-C per semester (from docs: "max 1 per semester")
+    // Max 1 V-C per semester
     let compensableCount = 0;
     let failedCount = 0;
 
     for (const item of tuResults) {
-        if (item.result.average < 6) {
+        if (item.result.average < 8) {
             failedCount++;
-        } else if (item.result.average < 8) {
+        } else if (item.result.average < 12) {
             compensableCount++;
         }
     }
 
-    if (roundedAverage >= 10 && failedCount === 0) {
+    if (roundedAverage >= 12 && failedCount === 0) {
         if (compensableCount === 0) {
             status = 'VALIDATED';
         } else if (compensableCount === 1) {
@@ -154,7 +126,7 @@ exports.calculateSemesterAverage = async (studentId, semesterId, academicYear) =
             status = 'VALIDATED';
             // We need to update the TU status to V-C
             for (const item of tuResults) {
-                if (item.result.average >= 6 && item.result.average < 8) {
+                if (item.result.average >= 8 && item.result.average < 12) {
                     await TUResult.findOneAndUpdate(
                         { studentId, tuId: item.tu._id },
                         { status: 'V-C', creditsEarned: item.tu.credits }

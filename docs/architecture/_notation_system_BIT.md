@@ -359,11 +359,11 @@ Moyenne TU = 57.80 / (2+1+1) = 57.80 / 4 = 14.45/20
 Une TU est **validée (V)** si et seulement si :
 
 ```
-Moyenne TU ≥ 8.00/20
+Moyenne TU ≥ 12.00/20
 ```
 
 **Statuts possibles :**
-- **V** : Validée (moyenne ≥ 8.00)
+- **V** : Validée (moyenne ≥ 12.00)
 - **NV** : Non Validée (moyenne < 8.00)
 - **V-C** : Validée par Compensation (voir section 8.3)
 
@@ -382,21 +382,21 @@ Moyenne TU ≥ 8.00/20
 
 ### 8.3 Compensation entre TU (V-C)
 
-La **compensation** permet de valider une TU ayant une moyenne < 8 si certaines conditions sont remplies.
+La **compensation** permet de valider une TU ayant une moyenne < 12 si certaines conditions sont remplies.
 
 **Règle de compensation :**
 Une TU peut être validée par compensation (V-C) si :
-1. Sa moyenne est **≥ 6.00/20** (seuil minimal)
-2. La **moyenne du semestre ≥ 10.00/20**
+1. Sa moyenne est **≥ 8.00/20** (seuil minimal)
+2. La **moyenne du semestre ≥ 12.00/20**
 3. Les autres TU du semestre compensent le déficit
 
 **Exemple :**
 ```
 Semestre 5 :
 - TU1 : 14.0/20 (validée V)
-- TU2 : 7.0/20 (< 8, mais ≥ 6)
+- TU2 : 10.5/20 (< 12, mais ≥ 8)
 - TU3 : 12.0/20 (validée V)
-- Moyenne semestre : 11.0/20 (≥ 10)
+- Moyenne semestre : 12.5/20 (≥ 12)
 
 → TU2 est validée par compensation (V-C)
 → Crédits de TU2 acquis
@@ -404,7 +404,7 @@ Semestre 5 :
 
 **Limite de compensation :**
 - Maximum **1 TU par semestre** peut être compensée
-- Si moyenne TU < 6.00 : **aucune compensation possible**
+- Si moyenne TU < 8.00 : **aucune compensation possible**
 
 ---
 
@@ -463,9 +463,9 @@ Total crédits acquis = 3 + 0 + 3 + 4 + 2 = 12/15 crédits
 Un semestre est **validé** si et seulement si **DEUX conditions** sont remplies :
 
 ```
-1. Moyenne Semestre ≥ 10.00/20
+1. Moyenne Semestre ≥ 12.00/20
    ET
-2. Toutes les TU ≥ 8.00/20 (ou validées par compensation)
+2. Toutes les TU ≥ 12.00/20 (ou validées par compensation)
 ```
 
 ### 10.2 Statuts possibles
@@ -478,12 +478,12 @@ Un semestre est **validé** si et seulement si **DEUX conditions** sont remplies
 
 #### Exemple 1 : Semestre VALIDÉ ✅
 ```
-Moyenne semestre : 11.69/20 (≥ 10) ✓
-TU1 : 14.17 (≥ 8) ✓
-TU2 : 8.50 (≥ 8) ✓
-TU3 : 11.50 (≥ 8) ✓
-TU4 : 14.45 (≥ 8) ✓
-TU5 : 9.00 (≥ 8) ✓
+Moyenne semestre : 12.69/20 (≥ 12) ✓
+TU1 : 14.17 (≥ 12) ✓
+TU2 : 12.50 (≥ 12) ✓
+TU3 : 13.50 (≥ 12) ✓
+TU4 : 14.45 (≥ 12) ✓
+TU5 : 12.00 (≥ 12) ✓
 
 → SEMESTRE VALIDÉ
 → 15/15 crédits acquis
@@ -491,26 +491,26 @@ TU5 : 9.00 (≥ 8) ✓
 
 #### Exemple 2 : Semestre NON VALIDÉ ❌ (TU insuffisante)
 ```
-Moyenne semestre : 11.50/20 (≥ 10) ✓
-TU1 : 14.00 (≥ 8) ✓
-TU2 : 7.50 (< 8) ✗  ← PROBLÈME
-TU3 : 12.00 (≥ 8) ✓
-TU4 : 14.00 (≥ 8) ✓
+Moyenne semestre : 12.50/20 (≥ 12) ✓
+TU1 : 14.00 (≥ 12) ✓
+TU2 : 10.50 (< 12) ✗  ← PROBLÈME
+TU3 : 12.00 (≥ 12) ✓
+TU4 : 14.00 (≥ 12) ✓
 
-→ SEMESTRE NON VALIDÉ (même si moyenne ≥ 10)
+→ SEMESTRE NON VALIDÉ (même si moyenne ≥ 12)
 → 12/15 crédits acquis (TU2 non validée)
 → Étudiant doit rattraper TU2
 ```
 
 #### Exemple 3 : Semestre NON VALIDÉ ❌ (Moyenne insuffisante)
 ```
-Moyenne semestre : 9.80/20 (< 10) ✗  ← PROBLÈME
-TU1 : 10.00 (≥ 8) ✓
-TU2 : 9.50 (≥ 8) ✓
-TU3 : 8.00 (≥ 8) ✓
-TU4 : 11.00 (≥ 8) ✓
+Moyenne semestre : 11.80/20 (< 12) ✗  ← PROBLÈME
+TU1 : 12.00 (≥ 12) ✓
+TU2 : 12.50 (≥ 12) ✓
+TU3 : 12.00 (≥ 12) ✓
+TU4 : 13.00 (≥ 12) ✓
 
-→ SEMESTRE NON VALIDÉ (même si toutes TU ≥ 8)
+→ SEMESTRE NON VALIDÉ (même si toutes TU ≥ 12)
 → 15/15 crédits acquis MAIS semestre non validé globalement
 ```
 
@@ -671,7 +671,7 @@ Le bulletin comporte les mentions suivantes :
 - **V-C** : TU Validated by Compensation (TU Validée par Compensation)
 
 **Règles de validation :**
-- "A semester is validated if and only if the semester average ≥ 10 and the average of each TU ≥ 08"
+- "A semester is validated if and only if the semester average ≥ 12 and the average of each TU ≥ 12"
 
 **Avertissements :**
 - "Any deletion or overload causes the invalidity of this document"
@@ -695,7 +695,7 @@ Les calculs sont effectués **en cascade** et peuvent être déclenchés :
        ↓
 2. Moyenne TU = Moyenne pondérée des notes TUE (par crédits TUE)
        ↓
-3. Validation TU = V si moyenne ≥ 8, sinon NV (ou V-C si compensation)
+3. Validation TU = V si moyenne ≥ 12, sinon NV (ou V-C si compensation)
        ↓
 4. Crédits TU acquis = Crédits TU si validée, sinon 0
        ↓

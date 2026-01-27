@@ -338,9 +338,9 @@ This document provides a step-by-step breakdown of all implementation tasks for 
 
 ### 9.4 TU Validation Logic
 - [ ] Implement `validateTU(tuAverage, semesterAverage)`
-  - [ ] If tuAverage ≥ 8.00: return "V"
-  - [ ] If tuAverage < 6.00: return "NV"
-  - [ ] If 6.00 ≤ tuAverage < 8.00 AND semesterAverage ≥ 10.00: return "V-C"
+  - [ ] If tuAverage ≥ 12.00: return "V"
+  - [ ] If tuAverage < 8.00: return "NV"
+  - [ ] If 8.00 ≤ tuAverage < 12.00 AND semesterAverage ≥ 12.00: return "V-C"
   - [ ] Else: return "NV"
 
 ### 9.5 Semester Average Calculation
@@ -352,7 +352,7 @@ This document provides a step-by-step breakdown of all implementation tasks for 
 
 ### 9.6 Semester Validation Logic
 - [ ] Implement `validateSemester(semesterAverage, tuValidations)`
-  - [ ] Check if semesterAverage ≥ 10.00
+  - [ ] Check if semesterAverage ≥ 12.00
   - [ ] Check if all TUs are validated (V or V-C)
   - [ ] Return "VALIDATED" if both conditions met
   - [ ] Else return "NOT_VALIDATED"
