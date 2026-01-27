@@ -13,6 +13,8 @@ const Grade = require('../models/Grade');
 let browser = null;
 let compiledTemplate = null;
 let cachedStyles = null;
+let compiledSemesterTemplate = null;
+let cachedSemesterStyles = null;
 
 // Timeout helper
 const withTimeout = (promise, ms, errorMsg) => {
@@ -26,12 +28,22 @@ const withTimeout = (promise, ms, errorMsg) => {
 
 // Load and cache templates
 const loadTemplates = async () => {
-    const templatePath = path.join(__dirname, '../templates/transcript-template.html');
-    const stylePath = path.join(__dirname, '../templates/transcript-styles.css');
+    const transcriptTemplatePath = path.join(__dirname, '../templates/transcript-template.html');
+    const transcriptStylePath = path.join(__dirname, '../templates/transcript-styles.css');
+    const semesterTemplatePath = path.join(__dirname, '../templates/semester-results-template.html');
+    const semesterStylePath = path.join(__dirname, '../templates/semester-results-styles.css');
 
-    const templateHtml = await fs.promises.readFile(templatePath, 'utf8');
-    cachedStyles = await fs.promises.readFile(stylePath, 'utf8');
-    compiledTemplate = handlebars.compile(templateHtml);
+    const transcriptHtml = await fs.promises.readFile(transcriptTemplatePath, 'utf8');
+    cachedStyles = await fs.promises.readFile(transcriptStylePath, 'utf8');
+    compiledTemplate = handlebars.compile(transcriptHtml);
+
+    try {
+        const semesterHtml = await fs.promises.readFile(semesterTemplatePath, 'utf8');
+        cachedSemesterStyles = await fs.promises.readFile(semesterStylePath, 'utf8');
+        compiledSemesterTemplate = handlebars.compile(semesterHtml);
+    } catch (err) {
+        console.warn('Semester results templates not found:', err.message);
+    }
 
     console.log('Templates loaded and cached');
 };
@@ -488,6 +500,202 @@ exports.generateTranscript = async (studentId, semesterId, academicYear, res, la
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=transcript_${studentId}.pdf`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.end(pdfBuffer);
+    } catch (error) {
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+};
+
+const buildSemesterResultsPdfBuffer = async (promotionId, semesterId, academicYear, { debug } = {}) => {
+    let page = null;
+    try {
+        if (!compiledSemesterTemplate || !cachedSemesterStyles) {
+            console.log('Semester templates not cached, loading now...');
+            await loadTemplates();
+        }
+
+        if (!compiledSemesterTemplate || !cachedSemesterStyles) {
+            throw new Error('Semester results template not available');
+        }
+
+        const Promotion = require('../models/Promotion');
+        const TU = require('../models/TU');
+
+        const promotion = await Promotion.findById(promotionId).populate('fieldId');
+        if (!promotion) {
+            throw new Error('Promotion not found');
+        }
+
+        const semester = await Semester.findById(semesterId);
+        if (!semester) {
+            throw new Error('Semester not found');
+        }
+
+        if (semester.promotionId.toString() !== promotionId.toString()) {
+            throw new Error('Semester does not belong to the selected promotion');
+        }
+
+        const students = await Student.find({
+            promotionId,
+            academicYear,
+            isActive: true
+        }).sort({ studentId: 1 });
+
+        const tus = await TU.find({ semesterId, isActive: true }).sort({ name: 1 });
+        const tuIds = tus.map((tu) => tu._id);
+
+        const tuesByTu = {};
+        for (const tu of tus) {
+            const tues = await TUE.find({ tuId: tu._id, isActive: true }).sort({ name: 1 });
+            tuesByTu[tu._id.toString()] = tues;
+        }
+
+        const studentsData = [];
+        for (const student of students) {
+            const tuResults = await TUResult.find({
+                studentId: student._id,
+                academicYear,
+                tuId: { $in: tuIds }
+            });
+            const tuResultMap = new Map(tuResults.map((result) => [result.tuId.toString(), result]));
+
+            const tueIds = [].concat(...Object.values(tuesByTu).map((list) => list.map((tue) => tue._id)));
+            const grades = await Grade.find({
+                studentId: student._id,
+                academicYear,
+                tueId: { $in: tueIds }
+            });
+            const gradeMap = new Map(grades.map((grade) => [grade.tueId.toString(), grade]));
+
+            const semResult = await SemesterResult.findOne({
+                studentId: student._id,
+                semesterId,
+                academicYear
+            });
+
+            const tusData = tus.map((tu) => {
+                const result = tuResultMap.get(tu._id.toString());
+                const tues = tuesByTu[tu._id.toString()] || [];
+                const tueRows = tues.length > 0
+                    ? tues.map((tue) => {
+                        const grade = gradeMap.get(tue._id.toString());
+                        const gradeValue = grade ? grade.finalGrade.toFixed(2) : '-';
+                        return {
+                            name: tue.name,
+                            grade: gradeValue
+                        };
+                    })
+                    : [{ name: '—', grade: '—' }];
+
+                return {
+                    name: tu.name,
+                    average: result ? result.average.toFixed(2) : '-',
+                    status: result ? result.status : 'PENDING',
+                    tues: tueRows,
+                    rowspan: tueRows.length
+                };
+            });
+
+            studentsData.push({
+                name: `${student.firstName} ${student.lastName}`,
+                studentId: student.studentId,
+                semesterAverage: semResult ? semResult.average.toFixed(2) : '-',
+                semesterStatus: semResult ? semResult.status : 'PENDING',
+                tus: tusData
+            });
+        }
+
+        const templateData = {
+            promotionName: promotion.name,
+            fieldName: promotion.fieldId?.name || 'N/A',
+            semesterName: semester.name,
+            academicYear,
+            generatedAt: new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+            students: studentsData,
+            styles: cachedSemesterStyles
+        };
+
+        const html = compiledSemesterTemplate(templateData);
+
+        if (debug) {
+            try {
+                fs.writeFileSync('debug_last_semester_results.html', html);
+                console.log('[PDF Debug] Saved debug_last_semester_results.html');
+            } catch (e) {
+                console.error('Failed to save debug HTML:', e);
+            }
+        }
+
+        const browserInstance = await initBrowser();
+        page = await withTimeout(
+            browserInstance.newPage(),
+            5000,
+            'Page creation timeout (5s)'
+        );
+
+        await withTimeout(
+            page.setContent(html, {
+                waitUntil: 'networkidle0',
+                timeout: 10000
+            }),
+            12000,
+            'Content loading timeout (12s)'
+        );
+
+        await page.evaluateHandle('document.fonts.ready');
+
+        const pdfBuffer = await withTimeout(
+            page.pdf({
+                format: 'A4',
+                printBackground: true,
+                margin: {
+                    top: '0.6cm',
+                    bottom: '0.6cm',
+                    left: '0.6cm',
+                    right: '0.6cm'
+                },
+                preferCSSPageSize: false
+            }),
+            20000,
+            'PDF generation timeout (20s)'
+        );
+
+        if (debug) {
+            try {
+                fs.writeFileSync('debug_last_semester_results.pdf', pdfBuffer);
+                console.log('[PDF Debug] Saved debug_last_semester_results.pdf');
+            } catch (e) {
+                console.error('Failed to save debug PDF:', e);
+            }
+        }
+
+        return pdfBuffer;
+    } catch (error) {
+        console.error('Semester Results PDF Error:', error);
+        throw error;
+    } finally {
+        if (page) {
+            try {
+                await page.close();
+            } catch (closeErr) {
+                console.error('Error closing page:', closeErr);
+            }
+        }
+    }
+};
+
+exports.generateSemesterResultsBuffer = async (promotionId, semesterId, academicYear) => (
+    buildSemesterResultsPdfBuffer(promotionId, semesterId, academicYear, { debug: false })
+);
+
+exports.generateSemesterResultsPdf = async (promotionId, semesterId, academicYear, res) => {
+    try {
+        const pdfBuffer = await buildSemesterResultsPdfBuffer(promotionId, semesterId, academicYear, { debug: true });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=semester_results_${promotionId}_${semesterId}.pdf`);
         res.setHeader('Content-Length', pdfBuffer.length);
         res.end(pdfBuffer);
     } catch (error) {

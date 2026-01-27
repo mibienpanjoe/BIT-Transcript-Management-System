@@ -198,3 +198,85 @@ exports.bulkCalculateAnnual = async (req, res) => {
         });
     }
 };
+
+// @desc    Bulk Calculate Semester Results
+// @route   POST /api/calculations/semester/bulk
+// @access  Private/Admin
+exports.bulkCalculateSemester = async (req, res) => {
+    try {
+        const { promotionId, semesterId, academicYear } = req.body;
+
+        if (!promotionId || !semesterId || !academicYear) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: promotionId, semesterId, academicYear'
+            });
+        }
+
+        const Student = require('../models/Student');
+        const Semester = require('../models/Semester');
+
+        const semester = await Semester.findById(semesterId);
+        if (!semester) {
+            return res.status(404).json({ success: false, message: 'Semester not found' });
+        }
+
+        if (semester.promotionId.toString() !== promotionId.toString()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Semester does not belong to the selected promotion'
+            });
+        }
+
+        const students = await Student.find({
+            promotionId,
+            academicYear,
+            isActive: true
+        }).select('_id');
+
+        if (students.length === 0) {
+            return res.status(404).json({ success: false, message: 'No students found for this promotion' });
+        }
+
+        const results = [];
+        const errors = [];
+
+        const promises = students.map(async (student) => {
+            try {
+                return await calculationService.calculateSemesterAverage(
+                    student._id,
+                    semesterId,
+                    academicYear
+                );
+            } catch (err) {
+                throw new Error(`Student ${student._id}: ${err.message}`);
+            }
+        });
+
+        const outcomes = await Promise.allSettled(promises);
+
+        outcomes.forEach((outcome, index) => {
+            if (outcome.status === 'fulfilled') {
+                results.push(outcome.value);
+            } else {
+                errors.push({
+                    studentId: students[index]._id,
+                    error: outcome.reason.message
+                });
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Processed ${students.length} students. Success: ${results.length}, Failed: ${errors.length}`,
+            results,
+            errors
+        });
+    } catch (error) {
+        console.error('Error in bulk semester calculation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to perform bulk semester calculation'
+        });
+    }
+};

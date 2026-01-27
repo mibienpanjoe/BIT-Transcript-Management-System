@@ -6,6 +6,7 @@ const {
     updateSemester,
     deleteSemester,
 } = require('../controllers/semesterController');
+const { generateSemesterResultsPdf, generateSemesterResultsExcel } = require('../controllers/semesterResultsController');
 
 const { protect, authorize } = require('../middleware/auth');
 
@@ -118,6 +119,48 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
+ *
+ * /api/semesters/results/pdf:
+ *   post:
+ *     tags: [Semesters]
+ *     summary: Generate consolidated semester results PDF
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [promotionId, semesterId, academicYear]
+ *             properties:
+ *               promotionId: { type: string }
+ *               semesterId: { type: string }
+ *               academicYear: { type: string }
+ *     responses:
+ *       200:
+ *         description: PDF stream
+ *
+ * /api/semesters/results/excel:
+ *   post:
+ *     tags: [Semesters]
+ *     summary: Generate consolidated semester results Excel
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [promotionId, semesterId, academicYear]
+ *             properties:
+ *               promotionId: { type: string }
+ *               semesterId: { type: string }
+ *               academicYear: { type: string }
+ *     responses:
+ *       200:
+ *         description: Excel file
  */
 
 // Protect all routes
@@ -127,6 +170,9 @@ router.use(protect);
 router.route('/')
     .get(authorize('admin', 'schooling_manager'), getSemesters)
     .post(authorize('admin'), createSemester);
+
+router.post('/results/pdf', authorize('admin'), generateSemesterResultsPdf);
+router.post('/results/excel', authorize('admin'), generateSemesterResultsExcel);
 
 router.route('/:id')
     .get(authorize('admin', 'schooling_manager'), getSemester)

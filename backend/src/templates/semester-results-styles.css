@@ -1,0 +1,114 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 12px;
+    color: #1f2933;
+    margin: 0;
+    padding: 0;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #1f2933;
+    padding: 12px 0 10px;
+    margin-bottom: 12px;
+}
+
+.report-header h1 {
+    font-size: 18px;
+    margin: 0 0 6px;
+}
+
+.meta {
+    margin: 2px 0;
+    color: #4b5563;
+}
+
+.generated {
+    font-size: 11px;
+    color: #4b5563;
+}
+
+.student-section {
+    page-break-after: always;
+    padding: 8px 0 12px;
+}
+
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+}
+
+.student-name {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.student-id {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 2px;
+}
+
+.student-summary {
+    text-align: right;
+    font-size: 12px;
+    color: #334155;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+}
+
+.results-table th,
+.results-table td {
+    border: 1px solid #d0d7de;
+    padding: 6px 6px;
+    vertical-align: top;
+}
+
+.results-table th {
+    background: #e2e8f0;
+    font-weight: 700;
+    text-align: left;
+}
+
+.tu-col {
+    width: 26%;
+}
+
+.tue-col {
+    width: 34%;
+}
+
+.grade-col {
+    width: 12%;
+    text-align: center;
+}
+
+.avg-col {
+    width: 14%;
+    text-align: center;
+}
+
+.status-col {
+    width: 14%;
+    text-align: center;
+}
+
+@page {
+    size: A4;
+    margin: 0.8cm;
+}

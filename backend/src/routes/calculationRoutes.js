@@ -6,7 +6,8 @@ const {
     getSemesterResults,
     calculateAnnual,
     getAnnualResults,
-    bulkCalculateAnnual
+    bulkCalculateAnnual,
+    bulkCalculateSemester
 } = require('../controllers/calculationController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -104,6 +105,31 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *
+ * /api/calculations/semester/bulk:
+ *   post:
+ *     tags: [Calculations]
+ *     summary: Bulk calculate semester results
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [promotionId, semesterId, academicYear]
+ *             properties:
+ *               promotionId: { type: string }
+ *               semesterId: { type: string }
+ *               academicYear: { type: string }
+ *     responses:
+ *       200:
+ *         description: Bulk calculation done
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *
  * /api/calculations/tu-results:
  *   get:
  *     tags: [Calculations]
@@ -157,6 +183,7 @@ router.get('/tu-results', getTUResults);
 router.get('/semester-results', getSemesterResults);
 router.post('/annual', calculateAnnual);
 router.post('/annual/bulk', bulkCalculateAnnual);
+router.post('/semester/bulk', bulkCalculateSemester);
 router.get('/annual-results', getAnnualResults);
 
 module.exports = router;

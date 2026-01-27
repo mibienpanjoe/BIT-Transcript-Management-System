@@ -11,6 +11,7 @@ import AcademicStructure from './pages/admin/AcademicStructure';
 
 import TranscriptManagement from './pages/admin/TranscriptManagement';
 import GradeViewing from './pages/admin/GradeViewing';
+import SemesterResults from './pages/admin/SemesterResults';
 import AttendanceManagement from './pages/manager/AttendanceManagement';
 import MyCourses from './pages/teacher/MyCourses';
 import GradeSubmission from './pages/teacher/GradeSubmission';
@@ -86,6 +87,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <TranscriptManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/semester-results"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SemesterResults />
                 </ProtectedRoute>
               }
             />

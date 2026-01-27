@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Semester Results</title>
+    <style>
+        {{{styles}}}
+    </style>
+</head>
+<body>
+    <header class="report-header">
+        <div>
+            <h1>Semester Results Report</h1>
+            <p class="meta">Promotion: {{promotionName}}</p>
+            <p class="meta">Field: {{fieldName}}</p>
+            <p class="meta">Semester: {{semesterName}}</p>
+            <p class="meta">Academic Year: {{academicYear}}</p>
+        </div>
+        <div class="generated">Generated: {{generatedAt}}</div>
+    </header>
+
+    {{#each students}}
+    <section class="student-section">
+        <div class="student-header">
+            <div>
+                <div class="student-name">{{name}}</div>
+                <div class="student-id">ID: {{studentId}}</div>
+            </div>
+            <div class="student-summary">
+                <div>Semester Average: <strong>{{semesterAverage}}</strong></div>
+                <div>Status: <strong>{{semesterStatus}}</strong></div>
+            </div>
+        </div>
+
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th class="tu-col">TU</th>
+                    <th class="tue-col">TUE</th>
+                    <th class="grade-col">TUE Grade</th>
+                    <th class="avg-col">TU Average</th>
+                    <th class="status-col">TU Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each tus}}
+                    {{#each tues}}
+                    <tr>
+                        {{#if @first}}
+                            <td class="tu-col" rowspan="{{../rowspan}}">{{../name}}</td>
+                        {{/if}}
+                        <td class="tue-col">{{name}}</td>
+                        <td class="grade-col">{{grade}}</td>
+                        {{#if @first}}
+                            <td class="avg-col" rowspan="{{../rowspan}}">{{../average}}</td>
+                            <td class="status-col" rowspan="{{../rowspan}}">{{../status}}</td>
+                        {{/if}}
+                    </tr>
+                    {{/each}}
+                {{/each}}
+            </tbody>
+        </table>
+    </section>
+    {{/each}}
+</body>
+</html>
