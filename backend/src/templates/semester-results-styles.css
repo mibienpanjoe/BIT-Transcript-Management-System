@@ -4,7 +4,7 @@
 
 body {
     font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 7px;
+    font-size: 5px;
     color: #1f2933;
     margin: 0;
     padding: 0;
@@ -84,11 +84,11 @@ body {
 
 .tu-divider {
     width: 100%;
-    border-top: 0.5pt solid #1f2933;
+    border-top: 0.2pt solid #1f2933;
 }
 
 .tu-credits {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 8px;
 }
 
@@ -137,13 +137,13 @@ body {
 }
 
 .total-credits {
-    background: #fef9c3;
+    background: #fff;
     font-weight: 700;
     min-width: 60px;
 }
 
 .final-average {
-    background: #dbeafe;
+    background: #fef9c3;
     font-weight: 700;
     min-width: 55px;
 }
@@ -164,7 +164,7 @@ body {
 
 .pass-fail {
     font-weight: 700;
-    color: #fff;
+    color: #1f2933;
     min-width: 55px;
 }
 
@@ -177,11 +177,11 @@ body {
 }
 
 .redo {
-    background: #fff;
-    min-width: 60px;
+    background: #fef9c3;
+    min-width: 85px;
     font-size: 5px;
+    padding-left: 1px;
     text-align: left;
-    padding-left: 4px;
     white-space: normal;
     word-break: break-word;
 }
@@ -226,7 +226,7 @@ body {
 }
 
 .logo-block img {
-    width: 70px;
+    width: 50px;
     height: auto;
 }
 
@@ -242,35 +242,35 @@ body {
 }
 
 .col-no {
-    width: 26px;
+    width: 22px;
     font-weight: 700;
 }
 
 .col-id {
-    width: 90px;
+    width: 60px;
     white-space: nowrap;
-    font-size: 8px;
+    font-size: 5px;
 }
 
 .col-surname {
-    width: 90px;
+    width: 75px;
     text-align: left;
     padding-left: 4px;
     white-space: normal;
     word-break: break-word;
-    font-size: 8px;
+    font-size: 6px;
 }
 
 .col-name {
     width: 90px;
     text-align: left;
-    padding-left: 4px;
+    padding-left: 1px;
     white-space: normal;
     word-break: break-word;
-    font-size: 8px;
+    font-size: 6px;
 }
 
 @page {
     size: A4 landscape;
-    margin: 0.6cm;
+    margin: 0.05cm;
 }
