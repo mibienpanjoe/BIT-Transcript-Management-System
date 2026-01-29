@@ -154,10 +154,18 @@ body {
     min-width: 45px;
 }
 
+.conversion-header {
+    font-weight: 700;
+    font-size: 6px;
+    padding: 3px 2px;
+    line-height: 1.1;
+    min-width: 70px;
+}
+
 .conversion {
     text-align: left !important;
     padding-left: 2px;
-    min-width: 100px;
+    width: 70px !important;
     font-size: 6px;
     line-height: 1.1;
 }
@@ -174,6 +182,13 @@ body {
 
 .pass-fail.fail {
     background: #dc2626;
+}
+
+.redo-header {
+    font-weight: 700;
+    font-size: 6px;
+    line-height: 1.1;
+    min-width: 85px;
 }
 
 .redo {
