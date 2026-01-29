@@ -48,6 +48,12 @@ const getConversionLabel = (grade) => {
     }
 };
 
+const sanitizeFilename = (value) => (
+    String(value || '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9._-]/g, '')
+);
+
 const getSemesterContext = async (promotionId, semesterId, academicYear) => {
     const promotion = await Promotion.findById(promotionId).populate('fieldId');
     if (!promotion) {
@@ -455,8 +461,7 @@ exports.generateSemesterResultsExcel = async (req, res) => {
             });
         }
 
-        const fileName = `semester_results_${promotion.name}_${semester.name}_${academicYear}.xlsx`
-            .replace(/\s+/g, '_');
+        const fileName = `${sanitizeFilename(promotion.name)}_${sanitizeFilename(semester.name)}_GRADE_REPORT_SHEET_NORMAL_SESSION_${sanitizeFilename(academicYear)}.xlsx`;
         const buffer = await workbook.xlsx.writeBuffer();
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

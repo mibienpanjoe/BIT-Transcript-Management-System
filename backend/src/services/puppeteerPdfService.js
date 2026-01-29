@@ -155,6 +155,12 @@ const getI18n = (lang) => {
     };
 };
 
+const sanitizeFilename = (value) => (
+    String(value || '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9._-]/g, '')
+);
+
 const translateStatus = (status, i18n) => {
     if (status === 'VALIDATED') return i18n.validated;
     if (status === 'NOT VALIDATED') return i18n.notValidated;
@@ -830,8 +836,16 @@ exports.generateSemesterResultsBuffer = async (promotionId, semesterId, academic
 exports.generateSemesterResultsPdf = async (promotionId, semesterId, academicYear, res) => {
     try {
         const pdfBuffer = await buildSemesterResultsPdfBuffer(promotionId, semesterId, academicYear, { debug: true });
+        const Promotion = require('../models/Promotion');
+        const Semester = require('../models/Semester');
+        const promotion = await Promotion.findById(promotionId);
+        const semester = await Semester.findById(semesterId);
+        const safePromotion = sanitizeFilename(promotion?.name || promotionId);
+        const safeSemester = sanitizeFilename(semester?.name || semesterId);
+        const safeYear = sanitizeFilename(academicYear);
+        const fileName = `${safePromotion}_${safeSemester}_GRADE_REPORT_SHEET_NORMAL_SESSION_${safeYear}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=semester_results_${promotionId}_${semesterId}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         res.setHeader('Content-Length', pdfBuffer.length);
         res.end(pdfBuffer);
     } catch (error) {
