@@ -19,6 +19,16 @@ const PromotionSchema = new mongoose.Schema({
     academicYear: {
         type: String,
         required: [true, 'Please add academic year'],
+        validate: {
+            validator: function (value) {
+                const match = String(value || '').match(/^(\d{4})-(\d{4})$/);
+                if (!match) return false;
+                const start = Number(match[1]);
+                const end = Number(match[2]);
+                return end === start + 1;
+            },
+            message: 'Academic year must be in the format YYYY-YYYY (e.g., 2023-2024)'
+        }
     },
     isActive: {
         type: Boolean,
