@@ -544,17 +544,82 @@ const buildSemesterResultsPdfBuffer = async (promotionId, semesterId, academicYe
             isActive: true
         }).sort({ studentId: 1 });
 
+        const formatNumber = (value) => {
+            if (value === '-' || value === null || value === undefined) return '-';
+            const num = Number(value);
+            if (Number.isNaN(num)) return '-';
+            return num.toFixed(2).replace('.', ',');
+        };
+
+        const getInternationalGrade = (average) => {
+            if (average === null || average === undefined) return '-';
+            const avg = Number(average);
+            if (Number.isNaN(avg)) return '-';
+            if (avg >= 18) return 'A++';
+            if (avg >= 17) return 'A+';
+            if (avg >= 16) return 'A';
+            if (avg >= 15) return 'B+';
+            if (avg >= 14) return 'B';
+            if (avg >= 13) return 'C+';
+            if (avg >= 12) return 'C';
+            if (avg >= 11) return 'D+';
+            if (avg >= 10) return 'D';
+            return 'F';
+        };
+
+        const mapConversion = (grade) => {
+            switch (grade) {
+                case 'A++':
+                case 'A+':
+                case 'A':
+                    return 'Very good (très bien)';
+                case 'B+':
+                case 'B':
+                    return 'Good (bien)';
+                case 'C+':
+                case 'C':
+                    return 'Fairly Good (assez bien)';
+                case 'D+':
+                case 'D':
+                    return 'Passable';
+                case 'F':
+                    return 'Not passed';
+                default:
+                    return '-';
+            }
+        };
+
         const tus = await TU.find({ semesterId, isActive: true }).sort({ name: 1 });
         const tuIds = tus.map((tu) => tu._id);
 
+        const tusHeader = [];
         const tuesByTu = {};
         for (const tu of tus) {
             const tues = await TUE.find({ tuId: tu._id, isActive: true }).sort({ name: 1 });
             tuesByTu[tu._id.toString()] = tues;
+            tusHeader.push({
+                name: tu.name,
+                credits: tu.credits,
+                tues: tues.map((tue) => ({
+                    name: tue.name,
+                    credits: tue.credits
+                })),
+                colspan: (tues.length || 1) + 1
+            });
         }
 
+        const totalCredits = tus.reduce((sum, tu) => sum + tu.credits, 0);
+
+        let bestAverage = null;
+        let lowestAverage = null;
+        let averageSum = 0;
+        let averageCount = 0;
+        let passCount = 0;
+
         const studentsData = [];
-        for (const student of students) {
+        const allTueIds = [].concat(...Object.values(tuesByTu).map((list) => list.map((tue) => tue._id)));
+
+        for (const [index, student] of students.entries()) {
             const tuResults = await TUResult.find({
                 studentId: student._id,
                 academicYear,
@@ -562,11 +627,10 @@ const buildSemesterResultsPdfBuffer = async (promotionId, semesterId, academicYe
             });
             const tuResultMap = new Map(tuResults.map((result) => [result.tuId.toString(), result]));
 
-            const tueIds = [].concat(...Object.values(tuesByTu).map((list) => list.map((tue) => tue._id)));
             const grades = await Grade.find({
                 studentId: student._id,
                 academicYear,
-                tueId: { $in: tueIds }
+                tueId: { $in: allTueIds }
             });
             const gradeMap = new Map(grades.map((grade) => [grade.tueId.toString(), grade]));
 
@@ -576,45 +640,116 @@ const buildSemesterResultsPdfBuffer = async (promotionId, semesterId, academicYe
                 academicYear
             });
 
-            const tusData = tus.map((tu) => {
+            const row = [];
+            const failedTus = [];
+
+            for (const tu of tus) {
                 const result = tuResultMap.get(tu._id.toString());
                 const tues = tuesByTu[tu._id.toString()] || [];
-                const tueRows = tues.length > 0
-                    ? tues.map((tue) => {
-                        const grade = gradeMap.get(tue._id.toString());
-                        const gradeValue = grade ? grade.finalGrade.toFixed(2) : '-';
-                        return {
-                            name: tue.name,
-                            grade: gradeValue
-                        };
-                    })
-                    : [{ name: '—', grade: '—' }];
 
-                return {
-                    name: tu.name,
-                    average: result ? result.average.toFixed(2) : '-',
-                    status: result ? result.status : 'PENDING',
-                    tues: tueRows,
-                    rowspan: tueRows.length
-                };
-            });
+                if (tues.length === 0) {
+                    row.push({ value: '-', className: 'tue-cell' });
+                } else {
+                    for (const tue of tues) {
+                        const grade = gradeMap.get(tue._id.toString());
+                        row.push({
+                            value: grade ? formatNumber(grade.finalGrade) : formatNumber(0),
+                            className: 'tue-cell'
+                        });
+                    }
+                }
+
+                const tuAverageValue = result ? formatNumber(result.average) : '-';
+                row.push({ value: tuAverageValue, className: 'tu-avg' });
+
+                if (!result || result.status === 'NV') {
+                    failedTus.push(tu.name);
+                }
+            }
+
+            const finalAverage = semResult ? semResult.average : null;
+            const finalAverageFormatted = semResult ? formatNumber(semResult.average) : '-';
+            const weightedTotal = semResult ? formatNumber(semResult.average * totalCredits) : '-';
+            const internationalGrade = semResult ? getInternationalGrade(semResult.average) : '-';
+            const conversion = semResult ? mapConversion(internationalGrade) : '-';
+            const passFail = semResult && semResult.status === 'VALIDATED' ? 'PASS' : 'FAIL';
+            const passFailClass = passFail === 'PASS' ? 'pass' : 'fail';
+
+            if (typeof finalAverage === 'number') {
+                bestAverage = bestAverage === null ? finalAverage : Math.max(bestAverage, finalAverage);
+                lowestAverage = lowestAverage === null ? finalAverage : Math.min(lowestAverage, finalAverage);
+                averageSum += finalAverage;
+                averageCount += 1;
+            }
+
+            if (passFail === 'PASS') passCount += 1;
 
             studentsData.push({
-                name: `${student.firstName} ${student.lastName}`,
+                index: index + 1,
                 studentId: student.studentId,
-                semesterAverage: semResult ? semResult.average.toFixed(2) : '-',
-                semesterStatus: semResult ? semResult.status : 'PENDING',
-                tus: tusData
+                lastName: student.lastName.toUpperCase(),
+                firstName: student.firstName,
+                row,
+                weightedTotal,
+                finalAverage: finalAverageFormatted,
+                internationalGrade,
+                conversion,
+                passFail,
+                passFailClass,
+                redoExam: passFail === 'FAIL' && failedTus.length > 0 ? `${failedTus.join('; ')};` : ''
             });
+        }
+
+        const classAverage = averageCount > 0 ? averageSum / averageCount : 0;
+        const totalStudents = students.length;
+        const failCount = totalStudents - passCount;
+        const successRate = totalStudents > 0 ? (passCount / totalStudents) * 100 : 0;
+        const failureRate = totalStudents > 0 ? (failCount / totalStudents) * 100 : 0;
+
+        const getSemesterLabel = (level, order) => {
+            const baseByLevel = {
+                L1: 1,
+                L2: 3,
+                L3: 5,
+                M1: 7,
+                M2: 9
+            };
+            const base = baseByLevel[level];
+            if (!base || !order) return null;
+            return `S${base + (order - 1)}`;
+        };
+
+        const semesterLabel = getSemesterLabel(promotion.level, semester.order) || semester.name;
+
+        let logoBase64 = '';
+        try {
+            const logoPath = path.join(__dirname, '../templates/logo.jpg');
+            const logoBuffer = await fs.promises.readFile(logoPath);
+            logoBase64 = logoBuffer.toString('base64');
+        } catch (err) {
+            console.warn('Logo not found or could not be loaded:', err.message);
         }
 
         const templateData = {
             promotionName: promotion.name,
             fieldName: promotion.fieldId?.name || 'N/A',
-            semesterName: semester.name,
+            semesterTitle: semesterLabel,
             academicYear,
+            totalCredits,
             generatedAt: new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+            tus: tusHeader,
             students: studentsData,
+            stats: {
+                bestAverage: formatNumber(bestAverage ?? 0),
+                lowestAverage: formatNumber(lowestAverage ?? 0),
+                classAverage: formatNumber(classAverage ?? 0),
+                successRate: formatNumber(successRate ?? 0),
+                failureRate: formatNumber(failureRate ?? 0),
+                totalStudents,
+                passCount,
+                failCount
+            },
+            logoBase64,
             styles: cachedSemesterStyles
         };
 
@@ -650,6 +785,7 @@ const buildSemesterResultsPdfBuffer = async (promotionId, semesterId, academicYe
         const pdfBuffer = await withTimeout(
             page.pdf({
                 format: 'A4',
+                landscape: true,
                 printBackground: true,
                 margin: {
                     top: '0.6cm',

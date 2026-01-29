@@ -10,58 +10,115 @@
 </head>
 <body>
     <header class="report-header">
-        <div>
-            <h1>Semester Results Report</h1>
-            <p class="meta">Promotion: {{promotionName}}</p>
-            <p class="meta">Field: {{fieldName}}</p>
-            <p class="meta">Semester: {{semesterName}}</p>
-            <p class="meta">Academic Year: {{academicYear}}</p>
+        <div class="report-header-box">CLASS: {{promotionName}}</div>
+        <div class="report-header-title">
+            <div>{{semesterTitle}} GRADE REPORT SHEET</div>
+            <div class="subtitle">NORMAL SESSION</div>
         </div>
-        <div class="generated">Generated: {{generatedAt}}</div>
+        <div class="report-header-box">ACADEMIC YEAR: {{academicYear}}</div>
     </header>
 
-    {{#each students}}
-    <section class="student-section">
-        <div class="student-header">
-            <div>
-                <div class="student-name">{{name}}</div>
-                <div class="student-id">ID: {{studentId}}</div>
-            </div>
-            <div class="student-summary">
-                <div>Semester Average: <strong>{{semesterAverage}}</strong></div>
-                <div>Status: <strong>{{semesterStatus}}</strong></div>
-            </div>
-        </div>
-
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th class="tu-col">TU</th>
-                    <th class="tue-col">TUE</th>
-                    <th class="grade-col">TUE Grade</th>
-                    <th class="avg-col">TU Average</th>
-                    <th class="status-col">TU Status</th>
-                </tr>
-            </thead>
-            <tbody>
+    <table class="grade-table">
+        <colgroup>
+            <col class="col-no" />
+            <col class="col-id" />
+            <col class="col-surname" />
+            <col class="col-name" />
+            {{#each tus}}
+                {{#each tues}}
+                    <col class="tue-col" />
+                {{/each}}
+                <col class="tu-avg-col" />
+            {{/each}}
+            <col class="total-credits" />
+            <col class="final-average" />
+            <col class="intl-grade" />
+            <col class="conversion" />
+            <col class="pass-fail" />
+            <col class="redo" />
+        </colgroup>
+        <thead>
+            <tr class="top-group">
+                <th colspan="4" rowspan="2" class="logo-cell">
+                    <div class="logo-block">
+                        <img src="data:image/jpeg;base64,{{logoBase64}}" alt="BIT logo" />
+                        <div class="logo-text">
+                            <div class="logo-title">burkina</div>
+                            <div class="logo-title">institute of technology</div>
+                        </div>
+                    </div>
+                </th>
+                {{#each tus}}
+                    <th colspan="{{colspan}}" class="tu-group">
+                        <div class="tu-header">
+                            <div class="tu-name">{{name}}</div>
+                            <div class="tu-divider"></div>
+                            <div class="tu-credits">{{credits}}</div>
+                        </div>
+                    </th>
+                {{/each}}
+                <th rowspan="3" class="total-credits vertical-right">Total of Credits</th>
+                <th rowspan="3" class="final-average vertical-right">Final Average</th>
+                <th rowspan="3" class="intl-grade vertical-right">International Grade</th>
+                <th rowspan="3" class="conversion vertical-right">Conversion</th>
+                <th rowspan="3" class="pass-fail vertical-right">Pass/Fail?</th>
+                <th rowspan="3" class="redo vertical-right">Re-do exam</th>
+            </tr>
+            <tr class="sub-group">
                 {{#each tus}}
                     {{#each tues}}
-                    <tr>
-                        {{#if @first}}
-                            <td class="tu-col" rowspan="{{../rowspan}}">{{../name}}</td>
-                        {{/if}}
-                        <td class="tue-col">{{name}}</td>
-                        <td class="grade-col">{{grade}}</td>
-                        {{#if @first}}
-                            <td class="avg-col" rowspan="{{../rowspan}}">{{../average}}</td>
-                            <td class="status-col" rowspan="{{../rowspan}}">{{../status}}</td>
-                        {{/if}}
-                    </tr>
+                        <th class="vertical">{{name}}</th>
                     {{/each}}
+                    <th class="vertical tu-avg-header">TU average</th>
                 {{/each}}
-            </tbody>
+            </tr>
+            <tr class="credits-row">
+                <th class="col-no">N°</th>
+                <th class="col-id">ID</th>
+                <th class="col-surname">Surname</th>
+                <th class="col-name">Name</th>
+                {{#each tus}}
+                    {{#each tues}}
+                        <th class="credit">{{credits}}</th>
+                    {{/each}}
+                    <th class="credit">avg</th>
+                {{/each}}
+            </tr>
+        </thead>
+        <tbody>
+            {{#each students}}
+            <tr>
+                <td class="col-no">{{index}}</td>
+                <td class="col-id">{{studentId}}</td>
+                <td class="col-surname">{{lastName}}</td>
+                <td class="col-name">{{firstName}}</td>
+                {{#each row}}
+                    <td class="{{className}}">{{value}}</td>
+                {{/each}}
+                <td class="total-credits">{{weightedTotal}}</td>
+                <td class="final-average">{{finalAverage}}</td>
+                <td class="intl-grade">{{internationalGrade}}</td>
+                <td class="conversion">{{conversion}}</td>
+                <td class="pass-fail {{passFailClass}}">{{passFail}}</td>
+                <td class="redo">{{redoExam}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <section class="summary">
+        <table class="summary-table">
+            <tr><th>Best Average</th><td>{{stats.bestAverage}}</td></tr>
+            <tr><th>Lowest Average</th><td>{{stats.lowestAverage}}</td></tr>
+            <tr><th>Class Room Average</th><td>{{stats.classAverage}}</td></tr>
+            <tr><th>Percentage of Success</th><td>{{stats.successRate}}%</td></tr>
+            <tr><th>Percentage of Failure</th><td>{{stats.failureRate}}%</td></tr>
+        </table>
+        <table class="summary-table">
+            <tr><th>Number of students</th><td>{{stats.totalStudents}}</td></tr>
+            <tr><th>Number of passed</th><td>{{stats.passCount}}</td></tr>
+            <tr><th>Number of fails</th><td>{{stats.failCount}}</td></tr>
         </table>
     </section>
-    {{/each}}
 </body>
 </html>
