@@ -61,8 +61,19 @@ When you click **Enter Grades** for a course, you'll see a table with:
 - **Student Information**: Name and Student ID
 - **Presence Grade**: Auto-calculated from attendance (read-only)
 - **Participation Grade**: Editable (default: 10/20)
-- **Evaluation Grades**: Columns for each evaluation (DS, DM, Final, etc.)
+- **Evaluation Grades**: Columns for each evaluation component in the schema
 - **Final Grade**: Auto-calculated (display only)
+
+### Configure Evaluation Schema
+
+Before entering grades, configure the evaluation schema for the TUE:
+
+1. In the **Evaluation Schema** panel, click **Add Component**
+2. Provide a **Name** (e.g., "Test 1", "Project", "Exam") and a **Weight**
+3. Ensure the total evaluation weight equals **90%**
+4. Click **Save Schema**
+
+> **Note**: Once grades exist for a TUE, the schema is locked for teachers. Contact an admin to update it.
 
 ### Step-by-Step Grade Entry
 
@@ -77,7 +88,7 @@ When you click **Enter Grades** for a course, you'll see a table with:
 3. Press Tab or Enter to move to the next field
 
 #### 3. Enter Evaluation Grades
-1. For each evaluation column (DS1, DS2, DM, Final, etc.):
+1. For each evaluation column defined in the schema:
    - Enter the grade (0-20)
    - Leave blank if not yet evaluated
 2. The system validates that grades are between 0 and 20
@@ -95,11 +106,10 @@ When you click **Enter Grades** for a course, you'll see a table with:
 ### Grade Entry Example
 
 **Course**: Solar Thermal Energy  
-**Evaluation Structure**:
-- DS 1: 20%
-- DS 2: 20%
-- DM: 10%
-- Final Exam: 50%
+**Evaluation Schema**:
+- Test 1: 30%
+- Project: 30%
+- Exam: 30%
 
 **Student**: Jean Ouedraogo
 
@@ -107,10 +117,9 @@ When you click **Enter Grades** for a course, you'll see a table with:
 |-----------|-------|--------|--------------|
 | Presence | 18.00 | 5% | 0.90 |
 | Participation | 12.00 | 5% | 0.60 |
-| DS 1 | 14.00 | 18% (20% of 90%) | 2.52 |
-| DS 2 | 16.00 | 18% (20% of 90%) | 2.88 |
-| DM | 15.00 | 9% (10% of 90%) | 1.35 |
-| Final Exam | 17.00 | 45% (50% of 90%) | 7.65 |
+| Test 1 | 14.00 | 30% | 4.20 |
+| Project | 16.00 | 30% | 4.80 |
+| Exam | 17.00 | 30% | 5.10 |
 | **Final Grade** | | | **15.90** |
 
 ---
@@ -128,22 +137,22 @@ For faster grade entry, you can import grades from an Excel file.
 5. The template will include:
    - All enrolled students
    - Student IDs and names
-   - Columns for each evaluation
+   - Columns for each evaluation component in the schema
 
 ### Step 2: Fill the Template
 
 Open the Excel file and fill in the grades:
-- **studentId**: Pre-filled (don't modify)
-- **participationGrade**: Enter 0-20
-- **evaluation1**, **evaluation2**, etc.: Enter 0-20 for each evaluation
+- **Student ID**: Pre-filled (don't modify)
+- **Participation**: Enter 0-20
+- **Eval: <Name> (<Weight>%)**: Enter 0-20 for each evaluation
 - Leave cells blank for not-yet-evaluated items
 
 **Example Template:**
 ```
-studentId,studentName,participationGrade,DS1,DS2,DM,FinalExam
-BIT2023001,Jean Ouedraogo,12,14,16,15,17
-BIT2023002,Marie Kaboré,15,16,17,18,19
-BIT2023003,Paul Sawadogo,10,12,13,11,14
+Student ID,Last Name,First Name,Participation,Eval: Test 1 (30%),Eval: Project (30%),Eval: Exam (30%)
+BIT2023001,Ouedraogo,Jean,12,14,16,17
+BIT2023002,Kaboré,Marie,15,16,17,18
+BIT2023003,Sawadogo,Paul,10,12,13,14
 ```
 
 ### Step 3: Upload the File
@@ -261,7 +270,7 @@ Final Grade = (18 × 0.05) + (12 × 0.05) + (16 × 0.90)
 ## Frequently Asked Questions
 
 ### Can I edit grades after saving?
-Yes, you can edit grades at any time. Simply return to the grade entry page, make changes, and save again.
+No. Once you submit grades, the system locks the entries. Contact an administrator if you need changes.
 
 ### What if I make a mistake?
 You can edit any grade you've entered. If you need to delete a grade entirely, contact an administrator.
@@ -272,8 +281,8 @@ No, you can only view and edit grades for courses assigned to you.
 ### What if the presence grade is missing?
 Contact the Schooling Manager to enter attendance for your course. Presence defaults to 10/20 if not entered.
 
-### Can I change the evaluation structure?
-No, only administrators can modify the evaluation structure. Contact your admin if changes are needed.
+### Can I change the evaluation schema?
+You can update it only before any grades are saved. After grades exist, only an administrator can update it.
 
 ### What happens if I don't enter participation grades?
 The system uses a default of 10/20 for participation if you don't enter a value.
@@ -323,6 +332,6 @@ If you need assistance:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: November 22, 2025  
+**Document Version**: 1.1  
+**Last Updated**: January 30, 2026  
 **For**: BIT TMS Teachers

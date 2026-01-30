@@ -52,9 +52,9 @@ Final TUE Grade = (Presence × 5%) + (Participation × 5%) + (Evaluations × 90%
 - **Range**: 0-20
 - **Default**: 10/20
 
-#### 3. Evaluations Average (90% weight)
-- **Source**: Weighted average of all evaluations
-- **Formula**: `Σ(Evaluation Grade × Coefficient) / 100`
+-#### 3. Evaluations Average (90% weight)
+- **Source**: Weighted average of all evaluation components defined in the TUE schema
+- **Formula**: `Σ(Evaluation Score × Weight%) / 100`
 - **Range**: 0-20
 
 ### Calculation Steps
@@ -98,7 +98,7 @@ Final Grade = (18 × 0.05) + (12 × 0.05) + (16 × 0.90)
 
 ### Edge Cases
 
-- **Missing Evaluations**: Treated as 0/20
+- **Missing Evaluation Components**: Treated as 0/20
 - **Missing Presence**: Default to 10/20
 - **Missing Participation**: Default to 10/20
 - **Negative Values**: Not allowed, validation enforced
@@ -500,6 +500,11 @@ All calculations follow these rounding rules:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: November 22, 2025  
+**Document Version**: 1.1  
+**Last Updated**: January 30, 2026  
 **For**: BIT TMS Developers
+### Schema Locking and Recalculation
+
+- Teachers can configure the evaluation schema before any grades are saved.
+- Once grades exist, the schema is locked for teachers.
+- Admin overrides are allowed and trigger recalculation for all grades in the TUE.

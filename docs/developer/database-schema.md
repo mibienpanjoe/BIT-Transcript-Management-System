@@ -273,10 +273,10 @@ Individual courses or modules.
   credits: Number,           // Required, 1-4
   teacherId: ObjectId,       // Ref: 'User', required
   volumeHours: Number,       // Optional
-  evaluationStructure: [{
-    name: String,            // e.g., "Devoir Surveillé 1"
-    type: String,            // Enum: ['DS', 'DM', 'Project', 'Final', 'CC', 'TP', 'Presentation']
-    coefficient: Number      // Percentage, sum must equal 100
+  evaluationSchema: [{
+    key: String,             // Stable key used for mapping scores
+    name: String,            // e.g., "Test 1"
+    weight: Number           // Percentage, sum must equal 90
   }],
   createdAt: Date,
   updatedAt: Date
@@ -289,7 +289,7 @@ Individual courses or modules.
 - `teacherId`: Non-unique index
 
 **Validation:**
-- Evaluation structure coefficients must sum to 100
+- Evaluation schema weights must sum to 90
 
 **Example Document:**
 ```json
@@ -325,18 +325,19 @@ Stores student grades for each TUE.
   tueId: ObjectId,           // Ref: 'TUE', required
   
   // Component Grades
-  presenceGrade: Number,     // 0-20, calculated from attendance
-  participationGrade: Number, // 0-20, default: 10
+  presence: Number,          // 0-20, calculated from attendance
+  participation: Number,     // 0-20, default: 10
   
   // Evaluation Grades
-  evaluationGrades: [{
-    evaluationName: String,
-    grade: Number,           // 0-20
-    coefficient: Number
+  evaluations: [{
+    key: String,
+    name: String,
+    weight: Number,
+    score: Number            // 0-20
   }],
   
   // Calculated Fields
-  evaluationsAverage: Number, // Weighted average of evaluations
+  evaluation: Number,        // Legacy single evaluation (90%)
   finalGrade: Number,        // Calculated: presence*5% + participation*5% + evaluations*90%
   
   // Metadata
@@ -358,15 +359,14 @@ Stores student grades for each TUE.
   "_id": "507f1f77bcf86cd799439018",
   "studentId": "507f1f77bcf86cd799439012",
   "tueId": "507f1f77bcf86cd799439017",
-  "presenceGrade": 18.00,
-  "participationGrade": 12.00,
-  "evaluationGrades": [
-    { "evaluationName": "DS 1", "grade": 14.00, "coefficient": 20 },
-    { "evaluationName": "DS 2", "grade": 16.00, "coefficient": 20 },
-    { "evaluationName": "DM", "grade": 15.00, "coefficient": 10 },
-    { "evaluationName": "Final Exam", "grade": 17.00, "coefficient": 50 }
-  ],
-  "evaluationsAverage": 16.00,
+   "presence": 18.00,
+   "participation": 12.00,
+   "evaluations": [
+     { "key": "test-1", "name": "Test 1", "weight": 30, "score": 14.00 },
+     { "key": "project", "name": "Project", "weight": 30, "score": 16.00 },
+     { "key": "exam", "name": "Exam", "weight": 30, "score": 17.00 }
+   ],
+   "evaluation": 0,
   "finalGrade": 15.90,
   "enteredBy": "507f1f77bcf86cd799439011",
   "lastModifiedBy": "507f1f77bcf86cd799439011",
@@ -603,6 +603,6 @@ Additional validation in controllers:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: November 22, 2025  
+**Document Version**: 1.1  
+**Last Updated**: January 30, 2026  
 **For**: BIT TMS Developers

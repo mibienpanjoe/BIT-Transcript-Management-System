@@ -7,6 +7,7 @@ Welcome to the BIT TMS Admin Guide! This comprehensive guide will help you manag
 2. [User Management](#user-management)
 3. [Student Management](#student-management)
 4. [Academic Structure Setup](#academic-structure-setup)
+5. [Evaluation Schema Management](#evaluation-schema-management)
 5. [Transcript Generation](#transcript-generation)
 6. [Best Practices](#best-practices)
 
@@ -231,21 +232,9 @@ TUEs are individual courses or modules.
    - **Credits**: Number of credits (1-4)
    - **Teacher**: Assign a teacher
    - **Volume Hours**: Optional
-4. Configure **Evaluation Structure**:
-   - Click **Add Evaluation**
-   - Enter evaluation name (e.g., "Devoir Surveillé 1")
-   - Select type (DS, DM, Project, Final, CC, TP, Presentation)
-   - Enter coefficient (percentage)
-   - Repeat for all evaluations
-   - **Important**: Total coefficients must equal 100%
-5. Click **Create TUE**
+4. Click **Create TUE**
 
-**Example Evaluation Structure:**
-- DS 1: 20%
-- DS 2: 20%
-- DM: 10%
-- Final Exam: 50%
-- **Total**: 100% ✅
+> **Note**: Evaluation schemas are configured by teachers in the grade entry page. See the Evaluation Schema Management section.
 
 ---
 
@@ -381,3 +370,17 @@ For more help, see the [Troubleshooting Guide](../troubleshooting.md) or contact
 **Document Version**: 1.0  
 **Last Updated**: November 22, 2025  
 **For**: BIT TMS Administrators
+## Evaluation Schema Management
+
+Evaluation schemas define assessment components (e.g., Test 1, Project, Exam) that together make up **90%** of the final grade.
+
+### Admin Override (Locked Schemas)
+
+If grades already exist, the schema is locked for teachers. Admins can override the lock to update the schema:
+
+1. Navigate to **Admin → Grades**
+2. Select the TUE
+3. In the **Evaluation Schema** panel, update components and weights
+4. Click **Save Schema**
+
+> **Warning**: Updating a locked schema recalculates all grades for that TUE.

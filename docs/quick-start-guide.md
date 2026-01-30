@@ -35,7 +35,7 @@ Get up and running with BIT TMS in minutes!
 #### Teacher
 
 - **View courses**: Teacher → My Courses
-- **Enter grades**: Teacher → Grade Submission → Select TUE → Enter Grades
+- **Enter grades**: Teacher → Grade Submission → Select TUE → Configure Evaluation Schema → Enter Grades
 
 #### Schooling Manager
 

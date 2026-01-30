@@ -25,7 +25,8 @@ The BIT TMS is a comprehensive web application designed to manage the academic l
 ### 2. Teacher
 *   **Grade Management**:
     *   View assigned Teaching Unit Elements (TUEs).
-    *   Enter grades for **Participation** and **Exams**.
+    *   Configure evaluation schema (component names + weights totaling 90%).
+    *   Enter grades for **Participation** and evaluation components.
     *   View (read-only) **Presence** grades managed by the Schooling Manager.
     *   **Import Grades** via Excel for bulk entry.
 
@@ -87,7 +88,7 @@ The BIT TMS is a comprehensive web application designed to manage the academic l
 
 ### Grading Process
 1.  **Schooling Manager**: Go to **Attendance**. Select the TUE and enter Presence grades.
-2.  **Teacher**: Log in, go to **Grades**. Select the TUE and enter Exam/Participation grades.
+2.  **Teacher**: Log in, go to **Grades**. Select the TUE, configure evaluation schema, and enter grades.
 3.  **Admin**: Go to **Results**. Click **Calculate Semester Results** to compute averages.
 4.  **Admin**: Click **PDF** icon next to a student to download their transcript.
 
