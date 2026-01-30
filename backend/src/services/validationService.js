@@ -175,7 +175,19 @@ async function findMissingTUEGrades(studentId, tuId, academicYear) {
             const missingComps = [];
             if (grade.presence === null || grade.presence === undefined) missingComps.push('presence');
             if (grade.participation === null || grade.participation === undefined) missingComps.push('participation');
-            if (grade.evaluation === null || grade.evaluation === undefined) missingComps.push('evaluation');
+
+            const evaluationSchema = Array.isArray(tue.evaluationSchema) ? tue.evaluationSchema : [];
+            if (evaluationSchema.length > 0) {
+                const evalMap = new Map((grade.evaluations || []).map((item) => [item.key, item]));
+                for (const schemaItem of evaluationSchema) {
+                    const evalItem = evalMap.get(schemaItem.key);
+                    if (!evalItem || evalItem.score === null || evalItem.score === undefined) {
+                        missingComps.push(schemaItem.name || 'evaluation');
+                    }
+                }
+            } else {
+                if (grade.evaluation === null || grade.evaluation === undefined) missingComps.push('evaluation');
+            }
 
             if (missingComps.length > 0) {
                 missing.push({

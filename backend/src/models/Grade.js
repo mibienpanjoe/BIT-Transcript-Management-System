@@ -29,6 +29,32 @@ const GradeSchema = new mongoose.Schema({
         max: 20,
         default: 0,
     },
+    evaluations: [
+        {
+            key: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            name: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            weight: {
+                type: Number,
+                required: true,
+                min: 0,
+                max: 90
+            },
+            score: {
+                type: Number,
+                min: 0,
+                max: 20,
+                default: null
+            }
+        }
+    ],
     finalGrade: {
         type: Number,
         min: 0,
@@ -89,8 +115,23 @@ GradeSchema.pre('save', async function (next) {
 
 // Calculate final grade before saving
 GradeSchema.pre('save', function (next) {
+    const safeNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const presenceScore = safeNumber(this.presence);
+    const participationScore = safeNumber(this.participation);
+
+    const evaluationComponents = Array.isArray(this.evaluations) ? this.evaluations : [];
+    const evaluationScore = evaluationComponents.length > 0
+        ? evaluationComponents.reduce((sum, item) => (
+            sum + (safeNumber(item.score) * safeNumber(item.weight) / 100)
+        ), 0)
+        : safeNumber(this.evaluation) * 0.90;
+
     // Formula: (Presence * 5%) + (Participation * 5%) + (Evaluations * 90%)
-    this.finalGrade = (this.presence * 0.05) + (this.participation * 0.05) + (this.evaluation * 0.90);
+    this.finalGrade = (presenceScore * 0.05) + (participationScore * 0.05) + evaluationScore;
     // Round to 2 decimal places
     this.finalGrade = Math.round(this.finalGrade * 100) / 100;
 

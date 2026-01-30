@@ -79,18 +79,23 @@ exports.parseGradeExcel = async (buffer) => {
 };
 
 // @desc    Validate and structure grade data from Excel
-exports.validateGradeData = async (data, tueId) => {
+exports.validateGradeData = async (data, tueId, evaluationSchema = []) => {
     const results = {
         success: 0,
         errors: [],
         grades: []
     };
 
+    if (!Array.isArray(evaluationSchema) || evaluationSchema.length === 0) {
+        throw new Error('Evaluation schema is not configured for this TUE');
+    }
+
     for (const [index, row] of data.entries()) {
         try {
             const studentId = row['Student ID'] || row['Matricule'] || row['ID'];
             const participation = parseFloat(row['Participation']) || 10;
-            const evaluation = parseFloat(row['Evaluation']) || 0;
+            const evaluations = [];
+            let rowHasError = false;
 
             // Validate student ID
             if (!studentId) {
@@ -110,8 +115,34 @@ exports.validateGradeData = async (data, tueId) => {
                 results.errors.push({ row: index + 2, message: 'Participation must be between 0 and 20' });
                 continue;
             }
-            if (evaluation < 0 || evaluation > 20) {
-                results.errors.push({ row: index + 2, message: 'Evaluation must be between 0 and 20' });
+            for (const schemaItem of evaluationSchema) {
+                const columnName = `Eval: ${schemaItem.name} (${schemaItem.weight}%)`;
+                const rawScore = row[columnName];
+                const score = rawScore === undefined || rawScore === null || rawScore === ''
+                    ? null
+                    : parseFloat(rawScore);
+
+                if (score === null || Number.isNaN(score)) {
+                    results.errors.push({ row: index + 2, message: `Missing or invalid score for ${schemaItem.name}` });
+                    rowHasError = true;
+                    continue;
+                }
+
+                if (score < 0 || score > 20) {
+                    results.errors.push({ row: index + 2, message: `${schemaItem.name} must be between 0 and 20` });
+                    rowHasError = true;
+                    continue;
+                }
+
+                evaluations.push({
+                    key: schemaItem.key,
+                    name: schemaItem.name,
+                    weight: schemaItem.weight,
+                    score
+                });
+            }
+
+            if (rowHasError) {
                 continue;
             }
 
@@ -119,7 +150,7 @@ exports.validateGradeData = async (data, tueId) => {
                 studentId: student._id,
                 tueId,
                 participation,
-                evaluation
+                evaluations
             });
 
             results.success++;
@@ -134,28 +165,36 @@ exports.validateGradeData = async (data, tueId) => {
 
 // @desc    Generate grade template Excel for a TUE
 exports.generateGradeTemplate = async (tue, students) => {
+    const evaluationSchema = Array.isArray(tue.evaluationSchema) ? tue.evaluationSchema : [];
     // Create workbook
     const wb = xlsx.utils.book_new();
 
     // Prepare data rows
-    const data = students.map(s => ({
-        'Student ID': s.studentId,
-        'Last Name': s.lastName,
-        'First Name': s.firstName,
-        'Participation': '', // Empty for teacher to fill
-        'Evaluation': '' // Empty for teacher to fill
-    }));
+    const data = students.map(s => {
+        const row = {
+            'Student ID': s.studentId,
+            'Last Name': s.lastName,
+            'First Name': s.firstName,
+            'Participation': ''
+        };
+
+        evaluationSchema.forEach((schemaItem) => {
+            row[`Eval: ${schemaItem.name} (${schemaItem.weight}%)`] = '';
+        });
+
+        return row;
+    });
 
     // Add header row with instructions
     const ws = xlsx.utils.json_to_sheet(data);
 
     // Set column widths
     ws['!cols'] = [
-        { wch: 15 }, // Student ID
-        { wch: 20 }, // Last Name
-        { wch: 20 }, // First Name
-        { wch: 15 }, // Participation
-        { wch: 15 }  // Evaluation
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 15 },
+        ...evaluationSchema.map(() => ({ wch: 18 }))
     ];
 
     // Add worksheet to workbook

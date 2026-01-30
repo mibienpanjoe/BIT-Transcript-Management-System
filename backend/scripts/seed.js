@@ -77,6 +77,14 @@ function splitCredits(credits) {
     return [credits, 0];
 }
 
+function getDefaultEvaluationSchema() {
+    return [
+        { key: 'test-1', name: 'Test 1', weight: 30 },
+        { key: 'project', name: 'Project', weight: 30 },
+        { key: 'exam', name: 'Exam', weight: 30 }
+    ];
+}
+
 async function resetCollections() {
     await Grade.deleteMany({});
     await TUResult.deleteMany({});
@@ -287,6 +295,7 @@ async function seed() {
                 credits: credits[i],
                 teacherId: teacher._id,
                 volumeHours: randBetween(30, 60),
+                evaluationSchema: getDefaultEvaluationSchema(),
             });
             tues.push(tue);
         }
@@ -316,14 +325,20 @@ async function seed() {
         for (const tue of studentTues) {
             const presence = randBetween(12, 20);
             const participation = randBetween(8, 18);
-            const evaluation = randBetween(6, 19);
+            const evaluations = getDefaultEvaluationSchema().map((schemaItem) => ({
+                key: schemaItem.key,
+                name: schemaItem.name,
+                weight: schemaItem.weight,
+                score: randBetween(6, 19)
+            }));
 
             await Grade.create({
                 studentId: student._id,
                 tueId: tue._id,
                 presence,
                 participation,
-                evaluation,
+                evaluation: 0,
+                evaluations,
                 academicYear: ACADEMIC_YEAR,
             });
             gradeCount++;

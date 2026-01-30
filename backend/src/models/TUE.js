@@ -33,6 +33,26 @@ const TUESchema = new mongoose.Schema({
         min: 0,
         default: 0,
     },
+    evaluationSchema: [
+        {
+            key: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            name: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            weight: {
+                type: Number,
+                required: true,
+                min: 0,
+                max: 90
+            }
+        }
+    ],
     isActive: {
         type: Boolean,
         default: true,

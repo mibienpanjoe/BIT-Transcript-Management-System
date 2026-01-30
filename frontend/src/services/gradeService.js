@@ -30,3 +30,13 @@ export const downloadTemplate = async (tueId) => {
     });
     return response.data;
 };
+
+export const getEvaluationSchema = async (tueId) => {
+    const response = await api.get(`/tues/${tueId}/evaluation-schema`);
+    return response.data;
+};
+
+export const updateEvaluationSchema = async (tueId, evaluationSchema) => {
+    const response = await api.put(`/tues/${tueId}/evaluation-schema`, { evaluationSchema });
+    return response.data;
+};

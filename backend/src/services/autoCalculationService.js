@@ -125,8 +125,20 @@ async function checkTUCompletion(studentId, tuId, academicYear) {
 
         // Check if all grade components are filled
         if (grade.presence === null || grade.presence === undefined ||
-            grade.participation === null || grade.participation === undefined ||
-            grade.evaluation === null || grade.evaluation === undefined) {
+            grade.participation === null || grade.participation === undefined) {
+            return false;
+        }
+
+        const evaluationSchema = Array.isArray(tue.evaluationSchema) ? tue.evaluationSchema : [];
+        if (evaluationSchema.length > 0) {
+            const evalMap = new Map((grade.evaluations || []).map((item) => [item.key, item]));
+            for (const schemaItem of evaluationSchema) {
+                const evalItem = evalMap.get(schemaItem.key);
+                if (!evalItem || evalItem.score === null || evalItem.score === undefined) {
+                    return false;
+                }
+            }
+        } else if (grade.evaluation === null || grade.evaluation === undefined) {
             return false;
         }
     }

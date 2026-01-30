@@ -179,11 +179,30 @@ const GradeViewing = () => {
         }));
     };
 
+    const handleEvaluationChange = (studentId, key, value) => {
+        setEditedGrades(prev => ({
+            ...prev,
+            [studentId]: {
+                ...prev[studentId],
+                evaluations: {
+                    ...(prev[studentId]?.evaluations || {}),
+                    [key]: value
+                }
+            }
+        }));
+    };
+
     const getDisplayValue = (studentId, field, originalValue) => {
         return editedGrades[studentId]?.[field] !== undefined
             ? editedGrades[studentId][field]
             : originalValue || '';
     };
+
+    const getEvaluationDisplayValue = (studentId, key, originalValue) => (
+        editedGrades[studentId]?.evaluations?.[key] !== undefined
+            ? editedGrades[studentId].evaluations[key]
+            : originalValue ?? ''
+    );
 
     const validateGrade = (value) => {
         if (value === '' || value === null || value === undefined) return true;
@@ -192,11 +211,14 @@ const GradeViewing = () => {
     };
 
     const hasInvalidGrades = () => {
-        return Object.values(editedGrades).some(grades =>
-            (grades.presence !== undefined && !validateGrade(grades.presence)) ||
-            (grades.participation !== undefined && !validateGrade(grades.participation)) ||
-            (grades.evaluation !== undefined && !validateGrade(grades.evaluation))
-        );
+        return Object.values(editedGrades).some((grades) => {
+            if (grades.presence !== undefined && !validateGrade(grades.presence)) return true;
+            if (grades.participation !== undefined && !validateGrade(grades.participation)) return true;
+            if (grades.evaluation !== undefined && !validateGrade(grades.evaluation)) return true;
+
+            const evalValues = grades.evaluations ? Object.values(grades.evaluations) : [];
+            return evalValues.some((value) => value !== undefined && !validateGrade(value));
+        });
     };
 
     const getInputClassName = (value) => {
@@ -212,6 +234,27 @@ const GradeViewing = () => {
         }
 
         return `${baseClasses} border-green-300 focus:ring-green-500 focus:border-green-500`;
+    };
+
+    const evaluationSchema = Array.isArray(gradeData?.tue?.evaluationSchema)
+        ? gradeData.tue.evaluationSchema
+        : [];
+
+    const buildEvaluationsPayload = (student, changes) => {
+        if (evaluationSchema.length === 0) return null;
+
+        return evaluationSchema.map((schemaItem) => {
+            const editedScore = changes?.evaluations?.[schemaItem.key];
+            const existingScore = student?.grade?.evaluations?.find(
+                (item) => item.key === schemaItem.key
+            )?.score;
+            const score = editedScore !== undefined ? editedScore : (existingScore ?? null);
+
+            return {
+                key: schemaItem.key,
+                score
+            };
+        });
     };
 
     const calculateStatistics = () => {
@@ -246,6 +289,7 @@ const GradeViewing = () => {
         try {
             const promises = Object.entries(editedGrades).map(([studentId, changes]) => {
                 const student = gradeData.students.find(s => s.student._id === studentId);
+                const evaluationsPayload = buildEvaluationsPayload(student, changes);
                 const payload = {
                     studentId,
                     tueId: selectedTUE,
@@ -258,6 +302,7 @@ const GradeViewing = () => {
                     evaluation: changes.evaluation !== undefined
                         ? changes.evaluation
                         : student?.grade?.evaluation || 0,
+                    ...(evaluationsPayload ? { evaluations: evaluationsPayload } : {})
                 };
                 return submitGrade(payload);
             });
@@ -420,9 +465,20 @@ const GradeViewing = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Participation (5%)
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Evaluation (90%)
-                                    </th>
+                                    {evaluationSchema.length > 0 ? (
+                                        evaluationSchema.map((schemaItem) => (
+                                            <th
+                                                key={schemaItem.key}
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                {schemaItem.name} ({schemaItem.weight}%)
+                                            </th>
+                                        ))
+                                    ) : (
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Evaluation (90%)
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Final Grade
                                     </th>
@@ -462,17 +518,38 @@ const GradeViewing = () => {
                                                 onChange={(e) => handleGradeChange(item.student._id, 'participation', e.target.value)}
                                             />
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                step="0.01"
-                                                className={getInputClassName(getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation))}
-                                                value={getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation)}
-                                                onChange={(e) => handleGradeChange(item.student._id, 'evaluation', e.target.value)}
-                                            />
-                                        </td>
+                                        {evaluationSchema.length > 0 ? (
+                                            evaluationSchema.map((schemaItem) => {
+                                                const existingScore = item.grade?.evaluations?.find(
+                                                    (entry) => entry.key === schemaItem.key
+                                                )?.score;
+                                                return (
+                                                    <td key={`${item.student._id}-${schemaItem.key}`} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="20"
+                                                            step="0.01"
+                                                            className={getInputClassName(getEvaluationDisplayValue(item.student._id, schemaItem.key, existingScore))}
+                                                            value={getEvaluationDisplayValue(item.student._id, schemaItem.key, existingScore)}
+                                                            onChange={(e) => handleEvaluationChange(item.student._id, schemaItem.key, e.target.value)}
+                                                        />
+                                                    </td>
+                                                );
+                                            })
+                                        ) : (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="20"
+                                                    step="0.01"
+                                                    className={getInputClassName(getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation))}
+                                                    value={getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation)}
+                                                    onChange={(e) => handleGradeChange(item.student._id, 'evaluation', e.target.value)}
+                                                />
+                                            </td>
+                                        )}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                             {formatGrade(item.grade?.finalGrade)}
                                         </td>

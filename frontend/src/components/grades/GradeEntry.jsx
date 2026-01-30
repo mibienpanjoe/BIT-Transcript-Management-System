@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getGradesForTUE, submitGrade, downloadTemplate, importGrades } from '../../services/gradeService';
+import { getGradesForTUE, submitGrade, downloadTemplate, importGrades, getEvaluationSchema, updateEvaluationSchema } from '../../services/gradeService';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
 import Alert from '../common/Alert';
@@ -7,6 +7,7 @@ import { formatGrade } from '../../utils/formatters';
 import { toast } from 'react-toastify';
 import { FaDownload, FaUpload, FaSave, FaUserGraduate } from 'react-icons/fa';
 import PropTypes from 'prop-types';
+import { useAuth } from '../../context/AuthContext';
 
 const GradeTableSkeleton = () => (
     <div className="animate-pulse">
@@ -24,6 +25,7 @@ const GradeTableSkeleton = () => (
 );
 
 const GradeEntry = ({ tueId }) => {
+    const { user } = useAuth();
     const [gradeData, setGradeData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -31,6 +33,9 @@ const GradeEntry = ({ tueId }) => {
     const [importFile, setImportFile] = useState(null);
     const [importing, setImporting] = useState(false);
     const [recentlySaved, setRecentlySaved] = useState(new Set());
+    const [schemaDraft, setSchemaDraft] = useState([]);
+    const [schemaLocked, setSchemaLocked] = useState(false);
+    const [schemaSaving, setSchemaSaving] = useState(false);
 
     useEffect(() => {
         loadGrades();
@@ -39,8 +44,14 @@ const GradeEntry = ({ tueId }) => {
     const loadGrades = async () => {
         try {
             setLoading(true);
-            const res = await getGradesForTUE(tueId);
-            setGradeData(res.data);
+            const [gradesRes, schemaRes] = await Promise.all([
+                getGradesForTUE(tueId),
+                getEvaluationSchema(tueId)
+            ]);
+            setGradeData(gradesRes.data);
+            const nextSchema = schemaRes?.data?.evaluationSchema || gradesRes.data?.tue?.evaluationSchema || [];
+            setSchemaDraft(nextSchema);
+            setSchemaLocked(!!schemaRes?.data?.locked);
             setEditedGrades({});
         } catch (error) {
             console.error('Grade loading error:', error);
@@ -54,6 +65,70 @@ const GradeEntry = ({ tueId }) => {
         }
     };
 
+    const evaluationSchema = Array.isArray(schemaDraft) ? schemaDraft : [];
+    const totalWeight = evaluationSchema.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+    const canEditSchema = !schemaLocked || user?.role === 'admin';
+
+    const handleSchemaChange = (index, field, value) => {
+        setSchemaDraft(prev => prev.map((item, idx) => (
+            idx === index ? { ...item, [field]: value } : item
+        )));
+    };
+
+    const handleAddSchemaRow = () => {
+        const key = `evaluation-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        setSchemaDraft(prev => ([
+            ...prev,
+            { key, name: '', weight: '' }
+        ]));
+    };
+
+    const handleRemoveSchemaRow = (index) => {
+        setSchemaDraft(prev => prev.filter((_, idx) => idx !== index));
+    };
+
+    const handleSaveSchema = async () => {
+        if (!canEditSchema) return;
+        if (schemaLocked && user?.role === 'admin') {
+            const confirmOverride = window.confirm(
+                'Grades already exist for this TUE. Updating the schema will recalculate all grades. Continue?'
+            );
+            if (!confirmOverride) return;
+        }
+        if (evaluationSchema.length === 0) {
+            toast.error('Add at least one evaluation component');
+            return;
+        }
+
+        const invalidRow = evaluationSchema.find((item) => !item.name || !item.weight);
+        if (invalidRow) {
+            toast.error('Each evaluation must have a name and weight');
+            return;
+        }
+
+        const normalizedTotal = Math.round(totalWeight * 100) / 100;
+        if (normalizedTotal !== 90) {
+            toast.error('Total evaluation weight must be 90%');
+            return;
+        }
+
+        setSchemaSaving(true);
+        try {
+            const payload = evaluationSchema.map((item, index) => ({
+                key: item.key || `evaluation-${index + 1}`,
+                name: item.name,
+                weight: Number(item.weight)
+            }));
+            await updateEvaluationSchema(tueId, payload);
+            toast.success('Evaluation schema updated');
+            loadGrades();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update evaluation schema');
+        } finally {
+            setSchemaSaving(false);
+        }
+    };
+
     const handleGradeChange = (studentId, field, value) => {
         setEditedGrades(prev => ({
             ...prev,
@@ -64,11 +139,30 @@ const GradeEntry = ({ tueId }) => {
         }));
     };
 
+    const handleEvaluationChange = (studentId, key, value) => {
+        setEditedGrades(prev => ({
+            ...prev,
+            [studentId]: {
+                ...prev[studentId],
+                evaluations: {
+                    ...(prev[studentId]?.evaluations || {}),
+                    [key]: value
+                }
+            }
+        }));
+    };
+
     const getDisplayValue = (studentId, field, originalValue) => {
         return editedGrades[studentId]?.[field] !== undefined
             ? editedGrades[studentId][field]
             : originalValue || '';
     };
+
+    const getEvaluationDisplayValue = (studentId, key, originalValue) => (
+        editedGrades[studentId]?.evaluations?.[key] !== undefined
+            ? editedGrades[studentId].evaluations[key]
+            : originalValue ?? ''
+    );
 
     const validateGrade = (value) => {
         if (value === '' || value === null || value === undefined) return true; // Allow empty
@@ -77,10 +171,13 @@ const GradeEntry = ({ tueId }) => {
     };
 
     const hasInvalidGrades = () => {
-        return Object.values(editedGrades).some(grades =>
-            (grades.participation !== undefined && !validateGrade(grades.participation)) ||
-            (grades.evaluation !== undefined && !validateGrade(grades.evaluation))
-        );
+        return Object.values(editedGrades).some((grades) => {
+            if (grades.participation !== undefined && !validateGrade(grades.participation)) return true;
+            if (grades.evaluation !== undefined && !validateGrade(grades.evaluation)) return true;
+
+            const evalValues = grades.evaluations ? Object.values(grades.evaluations) : [];
+            return evalValues.some((value) => value !== undefined && !validateGrade(value));
+        });
     };
 
     const getInputClassName = (value, isEditable = true) => {
@@ -103,6 +200,23 @@ const GradeEntry = ({ tueId }) => {
         return `${baseClasses} border-green-300 focus:ring-green-500 focus:border-green-500`;
     };
 
+    const buildEvaluationsPayload = (student, changes) => {
+        if (evaluationSchema.length === 0) return null;
+
+        return evaluationSchema.map((schemaItem) => {
+            const editedScore = changes?.evaluations?.[schemaItem.key];
+            const existingScore = student?.grade?.evaluations?.find(
+                (item) => item.key === schemaItem.key
+            )?.score;
+            const score = editedScore !== undefined ? editedScore : (existingScore ?? null);
+
+            return {
+                key: schemaItem.key,
+                score
+            };
+        });
+    };
+
     const handleSaveRow = async (studentId) => {
         const student = gradeData.students.find(s => s.student._id === studentId);
         const changes = editedGrades[studentId];
@@ -110,6 +224,7 @@ const GradeEntry = ({ tueId }) => {
         if (!changes) return;
 
         try {
+            const evaluationsPayload = buildEvaluationsPayload(student, changes);
             const payload = {
                 studentId,
                 tueId,
@@ -121,7 +236,8 @@ const GradeEntry = ({ tueId }) => {
                     : student?.grade?.participation || 0,
                 evaluation: changes.evaluation !== undefined
                     ? changes.evaluation
-                    : student?.grade?.evaluation || 0
+                    : student?.grade?.evaluation || 0,
+                ...(evaluationsPayload ? { evaluations: evaluationsPayload } : {})
                 // academicYear removed - backend derives it from student's promotion
             };
 
@@ -187,6 +303,7 @@ const GradeEntry = ({ tueId }) => {
         try {
             const promises = editableGrades.map(([studentId, changes]) => {
                 const student = gradeData.students.find(s => s.student._id === studentId);
+                const evaluationsPayload = buildEvaluationsPayload(student, changes);
                 const payload = {
                     studentId,
                     tueId,
@@ -198,7 +315,8 @@ const GradeEntry = ({ tueId }) => {
                         : student?.grade?.participation || 0,
                     evaluation: changes.evaluation !== undefined
                         ? changes.evaluation
-                        : student?.grade?.evaluation || 0
+                        : student?.grade?.evaluation || 0,
+                    ...(evaluationsPayload ? { evaluations: evaluationsPayload } : {})
                     // academicYear removed - backend derives it from student's promotion
                 };
                 return submitGrade(payload);
@@ -306,6 +424,87 @@ const GradeEntry = ({ tueId }) => {
             )}
 
             <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Evaluation Schema</h3>
+                        <p className="text-sm text-gray-600">Configure assessment components (total must be 90%).</p>
+                    </div>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${schemaLocked ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-700'}`}>
+                        {schemaLocked ? 'Locked' : 'Editable'}
+                    </span>
+                </div>
+                {schemaLocked && user?.role !== 'admin' && (
+                    <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                        Schema is locked because grades exist. Contact an administrator to update it.
+                    </div>
+                )}
+                {schemaLocked && user?.role === 'admin' && (
+                    <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                        Admin override enabled. Updating the schema will recalculate all grades.
+                    </div>
+                )}
+
+                <div className="space-y-3">
+                    {evaluationSchema.length === 0 && (
+                        <p className="text-sm text-gray-500">No components yet. Add at least one to proceed.</p>
+                    )}
+                    {evaluationSchema.map((item, index) => (
+                        <div key={item.key || index} className="grid grid-cols-12 gap-3 items-center">
+                            <input
+                                type="text"
+                                placeholder="Name (e.g., Test 1)"
+                                value={item.name}
+                                onChange={(event) => handleSchemaChange(index, 'name', event.target.value)}
+                                disabled={!canEditSchema}
+                                className="col-span-7 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-50"
+                            />
+                            <input
+                                type="number"
+                                min="0"
+                                max="90"
+                                step="0.01"
+                                placeholder="Weight %"
+                                value={item.weight}
+                                onChange={(event) => handleSchemaChange(index, 'weight', event.target.value)}
+                                disabled={!canEditSchema}
+                                className="col-span-3 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-50"
+                            />
+                            <div className="col-span-2 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveSchemaRow(index)}
+                                    disabled={!canEditSchema || evaluationSchema.length === 1}
+                                    className="text-sm font-medium text-red-600 hover:text-red-800 disabled:text-gray-300"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={handleAddSchemaRow}
+                        disabled={!canEditSchema}
+                    >
+                        Add Component
+                    </Button>
+                    <div className={`text-sm font-semibold ${Math.round(totalWeight * 100) / 100 === 90 ? 'text-green-600' : 'text-amber-600'}`}>
+                        Total: {Math.round(totalWeight * 100) / 100}%
+                    </div>
+                    <Button
+                        onClick={handleSaveSchema}
+                        isLoading={schemaSaving}
+                        disabled={!canEditSchema}
+                    >
+                        Save Schema
+                    </Button>
+                </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
@@ -314,12 +513,18 @@ const GradeEntry = ({ tueId }) => {
                         <p className="text-gray-600 mt-1">
                             Enter grades for students. Presence grades are managed by Schooling Manager.
                         </p>
+                        {evaluationSchema.length === 0 && (
+                            <p className="mt-2 text-sm text-amber-600">
+                                Configure the evaluation schema above to enable grade import and templates.
+                            </p>
+                        )}
                     </div>
                     <div className="flex space-x-2">
                         <Button
                             variant="outline"
                             onClick={handleDownloadTemplate}
                             className="flex items-center"
+                            disabled={evaluationSchema.length === 0}
                         >
                             <FaDownload className="mr-2" /> Template
                         </Button>
@@ -333,7 +538,7 @@ const GradeEntry = ({ tueId }) => {
                             <Button
                                 type="submit"
                                 isLoading={importing}
-                                disabled={!importFile}
+                                disabled={!importFile || evaluationSchema.length === 0}
                                 className="flex items-center"
                             >
                                 <FaUpload className="mr-2" /> Import
@@ -355,9 +560,20 @@ const GradeEntry = ({ tueId }) => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Participation (5%)
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Evaluation (90%)
-                                </th>
+                                {evaluationSchema.length > 0 ? (
+                                    evaluationSchema.map((schemaItem) => (
+                                        <th
+                                            key={schemaItem.key}
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            {schemaItem.name} ({schemaItem.weight}%)
+                                        </th>
+                                    ))
+                                ) : (
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Evaluation (90%)
+                                    </th>
+                                )}
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Final Grade
                                 </th>
@@ -395,21 +611,46 @@ const GradeEntry = ({ tueId }) => {
                                             onChange={(e) => handleGradeChange(item.student._id, 'participation', e.target.value)}
                                         />
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="20"
-                                            step="0.01"
-                                            disabled={!item.grade?.isEditable}
-                                            className={getInputClassName(
-                                                getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation),
-                                                item.grade?.isEditable
-                                            )}
-                                            value={getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation)}
-                                            onChange={(e) => handleGradeChange(item.student._id, 'evaluation', e.target.value)}
-                                        />
-                                    </td>
+                                    {evaluationSchema.length > 0 ? (
+                                        evaluationSchema.map((schemaItem) => {
+                                            const existingScore = item.grade?.evaluations?.find(
+                                                (entry) => entry.key === schemaItem.key
+                                            )?.score;
+                                            return (
+                                                <td key={`${item.student._id}-${schemaItem.key}`} className="px-6 py-4 whitespace-nowrap">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="20"
+                                                        step="0.01"
+                                                        disabled={!item.grade?.isEditable}
+                                                        className={getInputClassName(
+                                                            getEvaluationDisplayValue(item.student._id, schemaItem.key, existingScore),
+                                                            item.grade?.isEditable
+                                                        )}
+                                                        value={getEvaluationDisplayValue(item.student._id, schemaItem.key, existingScore)}
+                                                        onChange={(e) => handleEvaluationChange(item.student._id, schemaItem.key, e.target.value)}
+                                                    />
+                                                </td>
+                                            );
+                                        })
+                                    ) : (
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                step="0.01"
+                                                disabled={!item.grade?.isEditable}
+                                                className={getInputClassName(
+                                                    getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation),
+                                                    item.grade?.isEditable
+                                                )}
+                                                value={getDisplayValue(item.student._id, 'evaluation', item.grade?.evaluation)}
+                                                onChange={(e) => handleGradeChange(item.student._id, 'evaluation', e.target.value)}
+                                            />
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                         {formatGrade(item.grade?.finalGrade)}
                                     </td>

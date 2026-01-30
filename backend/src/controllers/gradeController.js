@@ -66,7 +66,7 @@ exports.getGrade = async (req, res) => {
 // @access  Private/Admin/Teacher
 exports.createOrUpdateGrade = async (req, res) => {
     try {
-        const { studentId, tueId, presence, participation, evaluation } = req.body;
+        const { studentId, tueId, presence, participation, evaluation, evaluations } = req.body;
 
         // Academic year is now derived by middleware and attached to req.body
         const academicYear = req.body.academicYear;
@@ -74,14 +74,43 @@ exports.createOrUpdateGrade = async (req, res) => {
         // Log academic year derivation for debugging
         console.log(`[Grade] Creating/updating grade for student ${studentId}, TUE ${tueId}, academic year: ${academicYear}`);
 
+        const contextTUE = req.gradeContext?.tue || await TUE.findById(tueId);
+        if (!contextTUE) {
+            return res.status(404).json({ success: false, message: 'TUE not found' });
+        }
+
+        const evaluationSchema = Array.isArray(contextTUE.evaluationSchema)
+            ? contextTUE.evaluationSchema
+            : [];
+        const hasSchema = evaluationSchema.length > 0;
+
+        const inputEvaluations = Array.isArray(evaluations) ? evaluations : null;
+        if (!hasSchema && inputEvaluations) {
+            return res.status(400).json({
+                success: false,
+                message: 'Evaluation schema is not configured for this TUE.'
+            });
+        }
+        const requiresEvaluations = hasSchema && req.user.role === 'teacher';
+        if (requiresEvaluations && !inputEvaluations) {
+            return res.status(400).json({
+                success: false,
+                message: 'Evaluation schema is configured for this TUE. Please submit evaluation components.'
+            });
+        }
+
         // Check if grade exists for this student, TUE, and academic year
         let grade = await Grade.findOne({ studentId, tueId, academicYear });
 
         // Teacher lock check: prevent teachers from modifying existing grades
         if (req.user.role === 'teacher' && grade) {
+            const hasEvaluationValues = (grade.evaluations || []).some((item) => (
+                item.score !== null && item.score !== undefined && item.score !== 0
+            ));
             const hasExistingValues =
                 (grade.participation !== null && grade.participation !== 0) ||
-                (grade.evaluation !== null && grade.evaluation !== 0);
+                (grade.evaluation !== null && grade.evaluation !== 0) ||
+                hasEvaluationValues;
 
             if (hasExistingValues) {
                 return res.status(403).json({
@@ -101,23 +130,78 @@ exports.createOrUpdateGrade = async (req, res) => {
             }
         }
 
+        const buildEvaluations = () => {
+            if (!hasSchema) return [];
+
+            const inputMap = new Map(
+                inputEvaluations.map((item) => [item.key, item])
+            );
+            const schemaKeys = new Set(evaluationSchema.map((item) => item.key));
+
+            for (const key of inputMap.keys()) {
+                if (!schemaKeys.has(key)) {
+                    throw new Error('Evaluation components do not match the configured schema');
+                }
+            }
+
+            if (inputMap.size > evaluationSchema.length) {
+                throw new Error('Evaluation components do not match the configured schema');
+            }
+
+            return evaluationSchema.map((schemaItem) => {
+                const inputItem = inputMap.get(schemaItem.key);
+                const score = inputItem?.score ?? null;
+
+                if (score !== null && score !== undefined) {
+                    const parsed = Number(score);
+                    if (Number.isNaN(parsed) || parsed < 0 || parsed > 20) {
+                        throw new Error(`Invalid score for ${schemaItem.name}`);
+                    }
+                }
+
+                return {
+                    key: schemaItem.key,
+                    name: schemaItem.name,
+                    weight: schemaItem.weight,
+                    score: score === '' ? null : score
+                };
+            });
+        };
+
         if (grade) {
             // Update existing grade
             grade.presence = presence !== undefined ? presence : grade.presence;
             grade.participation = participation !== undefined ? participation : grade.participation;
-            grade.evaluation = evaluation !== undefined ? evaluation : grade.evaluation;
+            if (hasSchema && inputEvaluations) {
+                grade.evaluations = buildEvaluations();
+                grade.evaluation = 0;
+            } else if (!hasSchema) {
+                grade.evaluation = evaluation !== undefined ? evaluation : grade.evaluation;
+            }
             // Academic year should not change for existing grades
 
             await grade.save();
             console.log(`[Grade] Updated grade ID ${grade._id} for academic year ${academicYear}`);
         } else {
             // Create new grade
+            const initialEvaluations = hasSchema
+                ? (inputEvaluations
+                    ? buildEvaluations()
+                    : evaluationSchema.map((schemaItem) => ({
+                        key: schemaItem.key,
+                        name: schemaItem.name,
+                        weight: schemaItem.weight,
+                        score: null
+                    })))
+                : [];
+
             grade = await Grade.create({
                 studentId,
                 tueId,
                 presence,
                 participation,
-                evaluation,
+                evaluation: hasSchema ? 0 : evaluation,
+                evaluations: initialEvaluations,
                 academicYear // Derived from middleware
             });
             console.log(`[Grade] Created new grade ID ${grade._id} for academic year ${academicYear}`);
@@ -128,7 +212,7 @@ exports.createOrUpdateGrade = async (req, res) => {
         // ------------------------------------------------------------------
         try {
             // 1. Get TU ID from TUE
-            const tue = await TUE.findById(tueId);
+            const tue = contextTUE;
             if (tue) {
                 // 2. Calculate TU Average
                 console.log(`[Calculation] Triggering TU calculation for TU ${tue.tuId}`);
@@ -197,11 +281,37 @@ exports.importGrades = async (req, res) => {
             return res.status(404).json({ success: false, message: 'TUE not found' });
         }
 
+        const evaluationSchema = Array.isArray(tue.evaluationSchema) ? tue.evaluationSchema : [];
+        if (evaluationSchema.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Evaluation schema is not configured for this TUE. Configure it before importing grades.'
+            });
+        }
+
+        if (req.user.role === 'teacher') {
+            const lockedGrade = await Grade.findOne({
+                tueId,
+                $or: [
+                    { participation: { $ne: 0 } },
+                    { evaluation: { $ne: 0 } },
+                    { 'evaluations.score': { $ne: null } }
+                ]
+            });
+
+            if (lockedGrade) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Grades are locked for this TUE. Only administrators can modify submitted grades.'
+                });
+            }
+        }
+
         // Parse Excel
         const data = await excelService.parseGradeExcel(req.file.buffer);
 
         // Validate and structure grade data
-        const validation = await excelService.validateGradeData(data, tueId);
+        const validation = await excelService.validateGradeData(data, tueId, evaluationSchema);
 
         if (validation.errors.length > 0 && validation.success === 0) {
             return res.status(400).json({
@@ -221,17 +331,20 @@ exports.importGrades = async (req, res) => {
             if (grade) {
                 // Update existing
                 grade.participation = gradeData.participation;
-                grade.evaluation = gradeData.evaluation;
+                grade.evaluations = gradeData.evaluations;
+                grade.evaluation = 0;
                 if (academicYear) grade.academicYear = academicYear;
                 await grade.save();
                 return grade;
-            } else {
-                // Create new
-                return await Grade.create({
-                    ...gradeData,
-                    academicYear: academicYear || new Date().getFullYear().toString()
-                });
             }
+
+            // Create new
+            return await Grade.create({
+                ...gradeData,
+                evaluation: 0,
+                evaluations: gradeData.evaluations,
+                academicYear: academicYear || new Date().getFullYear().toString()
+            });
         });
 
         await Promise.all(promises);
@@ -341,6 +454,8 @@ exports.getGradesForTUE = async (req, res) => {
             return res.status(404).json({ success: false, message: 'TUE not found' });
         }
 
+        const evaluationSchema = Array.isArray(tue.evaluationSchema) ? tue.evaluationSchema : [];
+
         // Get all students in the promotion
         const promotionId = tue.tuId.semesterId.promotionId._id;
         const students = await Student.find({ promotionId, isActive: true })
@@ -359,9 +474,13 @@ exports.getGradesForTUE = async (req, res) => {
                 if (!isAdmin && grade) {
                     if (req.user.role === 'teacher') {
                         // For teachers: locked if values exist
+                        const hasEvaluationValues = (grade.evaluations || []).some((item) => (
+                            item.score !== null && item.score !== undefined && item.score !== 0
+                        ));
                         const hasValues =
                             (grade.participation !== null && grade.participation !== 0) ||
-                            (grade.evaluation !== null && grade.evaluation !== 0);
+                            (grade.evaluation !== null && grade.evaluation !== 0) ||
+                            hasEvaluationValues;
                         isEditable = !hasValues;
                     } else if (req.user.role === 'schooling_manager') {
                         // For schooling manager: locked if presence exists
@@ -369,6 +488,13 @@ exports.getGradesForTUE = async (req, res) => {
                         isEditable = !hasPresence;
                     }
                 }
+
+                const defaultEvaluations = evaluationSchema.map((schemaItem) => ({
+                    key: schemaItem.key,
+                    name: schemaItem.name,
+                    weight: schemaItem.weight,
+                    score: null
+                }));
 
                 return {
                     student,
@@ -379,6 +505,7 @@ exports.getGradesForTUE = async (req, res) => {
                         participation: null,
                         evaluation: null,
                         presence: null,
+                        evaluations: defaultEvaluations,
                         finalGrade: null,
                         isEditable
                     }

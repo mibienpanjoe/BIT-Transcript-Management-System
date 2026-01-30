@@ -5,6 +5,8 @@ const {
     createTUE,
     updateTUE,
     deleteTUE,
+    getEvaluationSchema,
+    updateEvaluationSchema,
 } = require('../controllers/tueController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -132,5 +134,9 @@ router.route('/:id')
     .get(authorize('admin', 'schooling_manager'), getTUE)
     .put(authorize('admin'), updateTUE)
     .delete(authorize('admin'), deleteTUE);
+
+router.route('/:id/evaluation-schema')
+    .get(authorize('admin', 'teacher'), getEvaluationSchema)
+    .put(authorize('admin', 'teacher'), updateEvaluationSchema);
 
 module.exports = router;
