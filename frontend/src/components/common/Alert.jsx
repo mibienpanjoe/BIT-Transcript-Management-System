@@ -5,28 +5,33 @@ const Alert = ({ type = 'info', message, onClose, className = '' }) => {
     const types = {
         info: {
             icon: FaInfoCircle,
-            classes: 'bg-blue-50 text-blue-800 border-blue-200',
-            iconColor: 'text-blue-400'
+            classes: 'bg-brand-ink text-white border-brand-ink',
+            iconColor: 'text-brand-accent-soft',
+            closeClasses: 'bg-brand-ink text-white border-brand-ink focus:ring-brand-accent'
         },
         success: {
             icon: FaCheckCircle,
-            classes: 'bg-green-50 text-green-800 border-green-200',
-            iconColor: 'text-green-400'
+            classes: 'bg-brand-ink text-white border-brand-ink',
+            iconColor: 'text-green-300',
+            closeClasses: 'bg-brand-ink text-white border-brand-ink focus:ring-green-400'
         },
         warning: {
             icon: FaExclamationTriangle,
-            classes: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-            iconColor: 'text-yellow-400'
+            classes: 'bg-brand-ink text-white border-brand-ink',
+            iconColor: 'text-amber-300',
+            closeClasses: 'bg-brand-ink text-white border-brand-ink focus:ring-amber-400'
         },
         error: {
             icon: FaExclamationCircle,
-            classes: 'bg-red-50 text-red-800 border-red-200',
-            iconColor: 'text-red-400'
+            classes: 'bg-brand-ink text-white border-brand-ink',
+            iconColor: 'text-red-300',
+            closeClasses: 'bg-brand-ink text-white border-brand-ink focus:ring-red-400'
         }
     };
 
     const config = types[type] || types.info;
     const Icon = config.icon;
+    const closeClasses = config.closeClasses || config.classes;
 
     return (
         <div className={`rounded-md p-4 border ${config.classes} ${className}`}>
@@ -43,7 +48,7 @@ const Alert = ({ type = 'info', message, onClose, className = '' }) => {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.classes} hover:bg-opacity-75`}
+                                className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${closeClasses} hover:bg-opacity-75`}
                             >
                                 <span className="sr-only">Dismiss</span>
                                 <FaTimes className="h-5 w-5" aria-hidden="true" />
