@@ -23,17 +23,17 @@ const AcademicStructure = () => {
         <div className="w-full px-2 py-4 sm:px-0">
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Academic Structure</h1>
             <Tab.Group>
-                <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+                <Tab.List className="flex space-x-1 rounded-xl bg-brand-accent-soft p-1">
                     {Object.keys(categories).map((category) => (
                         <Tab
                             key={category}
                             className={({ selected }) =>
                                 classNames(
-                                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700',
-                                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-brand-ink',
+                                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-brand-accent focus:outline-none focus:ring-2',
                                     selected
-                                        ? 'bg-white shadow'
-                                        : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                                        ? 'bg-white shadow text-brand-accent'
+                                        : 'text-brand-ink/70 hover:bg-white/60 hover:text-brand-ink'
                                 )
                             }
                         >
@@ -46,8 +46,7 @@ const AcademicStructure = () => {
                         <Tab.Panel
                             key={idx}
                             className={classNames(
-                                'rounded-xl bg-white p-3',
-                                'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+                                'rounded-xl bg-white p-3 border border-brand-border'
                             )}
                         >
                             {component}

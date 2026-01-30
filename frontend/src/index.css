@@ -1,2 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+    --color-brand-ink: #1f2530;
+    --color-brand-ink-soft: #2a3240;
+    --color-brand-accent: #b54a72;
+    --color-brand-accent-strong: #a33f65;
+    --color-brand-accent-soft: #f3d6e1;
+    --color-brand-border: #e5e7eb;
+    --color-brand-surface: #f8fafc;
+
+    --color-blue-50: #f7e5ed;
+    --color-blue-100: #f2d2e0;
+    --color-blue-300: #e3a6be;
+    --color-blue-500: #c15a82;
+    --color-blue-600: #b54a72;
+    --color-blue-700: #a33f65;
+}
+
+@layer base {
+    body {
+        @apply bg-brand-surface text-brand-ink;
+    }
+}
